@@ -221,20 +221,58 @@ runs:
       env:
         # First platform only — resolved by the scan-platform step above
         TRIVY_PLATFORM: ${{ steps.scan-platform.outputs.value }}
+        # gh CLI uses GH_TOKEN automatically for authenticated API calls (avoids
+        # the 60 req/hr unauthenticated GitHub API rate limit on shared runners).
+        GH_TOKEN: ${{ inputs.github-token }}
         IMAGE_REF: ${{ inputs.registry }}/${{ inputs.image-name }}@${{ steps.build.outputs.digest }}
         SEVERITY: ${{ inputs.trivy-severity }}
       run: |
         set -euo pipefail
 
-        # Install Trivy using the official install script.
-        # This is more reliable than manually downloading from GitHub Releases, as it
-        # handles architecture detection, checksum verification, and extraction internally.
+        # Install Trivy by querying the latest release via gh api (authenticated,
+        # avoids GitHub API rate limits) then downloading binary + checksum via
+        # curl from browser_download_url (public CDN, no auth required).
+
+        # Select the correct tarball name for the runner's architecture.
+        ARCH=$(uname -m)
+        case "${ARCH}" in
+          x86_64)  TRIVY_ARCH="Linux-64bit" ;;
+          aarch64) TRIVY_ARCH="Linux-ARM64" ;;
+          *) echo "ERROR: Unsupported runner architecture: ${ARCH}"; exit 1 ;;
+        esac
+
         TRIVY_WORK_DIR=$(mktemp -d)
         trap 'rm -rf "${TRIVY_WORK_DIR}"' EXIT
 
-        echo "Installing Trivy..."
-        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-          | sh -s -- -b "${TRIVY_WORK_DIR}"
+        echo "Resolving latest Trivy release..."
+        TRIVY_RELEASE=$(gh api "repos/aquasecurity/trivy/releases/latest")
+        TRIVY_TAG=$(echo "${TRIVY_RELEASE}" | jq -r '.tag_name')
+        TRIVY_URL=$(echo "${TRIVY_RELEASE}" | jq -r --arg arch "${TRIVY_ARCH}" \
+          '.assets[] | select(.name | test($arch + "\\.tar\\.gz$")) | .browser_download_url' \
+          | head -1)
+        CHECKSUM_URL=$(echo "${TRIVY_RELEASE}" | jq -r \
+          '.assets[] | select(.name == "checksums.txt") | .browser_download_url' \
+          | head -1)
+
+        if [[ -z "${TRIVY_TAG}" || "${TRIVY_TAG}" == "null" ]]; then
+          echo "ERROR: Could not determine Trivy version"; exit 1
+        fi
+        if [[ -z "${TRIVY_URL}" || "${TRIVY_URL}" == "null" ]]; then
+          echo "ERROR: Could not find Trivy ${TRIVY_ARCH} tarball in release assets"
+          echo "Available assets:"; echo "${TRIVY_RELEASE}" | jq -r '.assets[].name'
+          exit 1
+        fi
+        if [[ -z "${CHECKSUM_URL}" || "${CHECKSUM_URL}" == "null" ]]; then
+          echo "ERROR: Could not find checksums.txt in release assets"; exit 1
+        fi
+
+        TARBALL="trivy_${TRIVY_ARCH}.tar.gz"
+        echo "Downloading Trivy ${TRIVY_TAG} (${TRIVY_ARCH})..."
+        curl -fsSL "${TRIVY_URL}" -o "${TRIVY_WORK_DIR}/${TARBALL}"
+        curl -fsSL "${CHECKSUM_URL}" -o "${TRIVY_WORK_DIR}/checksums.txt"
+
+        grep "${TARBALL}" "${TRIVY_WORK_DIR}/checksums.txt" | sha256sum --check --status
+        tar -xzf "${TRIVY_WORK_DIR}/${TARBALL}" -C "${TRIVY_WORK_DIR}" trivy
         export PATH="${TRIVY_WORK_DIR}:${PATH}"
         trivy --version
 
