@@ -43,13 +43,13 @@ outputs:
     description: 'Image digest for immutable reference'
     value: ${{ steps.build.outputs.digest }}
   image-ref:
-    description: 'Full image reference with digest'
+    description: 'Full image reference with digest (registry/name@sha256:...). Note: deploy-app uses image-tag and image-digest separately for Helm chart compatibility.'
     value: ${{ steps.image-ref.outputs.image-ref }}
   trivy-sarif:
-    description: 'Path to Trivy SARIF results file'
-    value: ${{ steps.trivy-output.outputs.sarif-file }}
+    description: 'Path to Trivy SARIF results file (runner-local path; results already uploaded to the Security tab via codeql-action/upload-sarif)'
+    value: ${{ steps.trivy.outputs.sarif-file }}
   sbom-file:
-    description: 'Path to SBOM file'
+    description: 'Path to SBOM file (runner-local path; artifact already uploaded via anchore/sbom-action)'
     value: ${{ steps.sbom-output.outputs.sbom-file }}
 
 runs:
@@ -64,6 +64,7 @@ runs:
         PR_NUMBER: ${{ inputs.pr-number }}
         COMMIT_SHA: ${{ inputs.commit-sha }}
         REGISTRY: ${{ inputs.registry }}
+        PLATFORMS: ${{ inputs.platforms }}
       run: |
         set -euo pipefail
 
@@ -116,6 +117,15 @@ runs:
         if ! [[ "$REGISTRY" =~ ^[a-z0-9.-]+$ ]]; then
           echo "ERROR: registry must be a valid hostname"
           echo "Received: '$REGISTRY'"
+          exit 1
+        fi
+
+        # Validate platforms (comma-separated list of known Docker Buildx platform values)
+        VALID_PLATFORM="linux/(amd64|arm64|arm/v6|arm/v7|arm/v8|386|ppc64le|s390x)"
+        if ! [[ "$PLATFORMS" =~ ^${VALID_PLATFORM}(,${VALID_PLATFORM})*$ ]]; then
+          echo "ERROR: platforms must be a comma-separated list of valid linux platforms"
+          echo "  Valid values: linux/amd64, linux/arm64, linux/arm/v6, linux/arm/v7, linux/arm/v8, linux/386, linux/ppc64le, linux/s390x"
+          echo "Received: '$PLATFORMS'"
           exit 1
         fi
 
@@ -186,33 +196,46 @@ runs:
         # Try org endpoint first, fall back to user endpoint
         if gh api "/orgs/${OWNER}/packages/container/${PACKAGE_NAME_ENCODED}" --silent 2>/dev/null; then
           gh api --method PATCH "/orgs/${OWNER}/packages/container/${PACKAGE_NAME_ENCODED}" \
-            -f visibility=public || echo "Warning: Could not set package visibility (may already be public)"
+            -f visibility=public --silent || echo "Warning: Could not set package visibility (may already be public)"
         else
           gh api --method PATCH "/user/packages/container/${PACKAGE_NAME_ENCODED}" \
-            -f visibility=public || echo "Warning: Could not set package visibility (may already be public)"
+            -f visibility=public --silent || echo "Warning: Could not set package visibility (may already be public)"
         fi
 
         echo "Package visibility set to public"
+
+    - name: Resolve scan platform
+      id: scan-platform
+      shell: bash
+      env:
+        PLATFORMS: ${{ inputs.platforms }}
+      run: |
+        set -euo pipefail
+        # Trivy and Syft each scan one manifest at a time; use the first platform
+        # from the potentially comma-separated list (e.g. "linux/arm64,linux/amd64" → "linux/arm64").
+        echo "value=${PLATFORMS%%,*}" >> "$GITHUB_OUTPUT"
 
     - name: Run Trivy vulnerability scanner
       id: trivy
       shell: bash
       env:
-        # Passed explicitly to --platform in the scan command below
-        TRIVY_PLATFORM: ${{ inputs.platforms }}
+        # First platform only — resolved by the scan-platform step above
+        TRIVY_PLATFORM: ${{ steps.scan-platform.outputs.value }}
+        # gh CLI uses GH_TOKEN automatically for release downloads
         GH_TOKEN: ${{ inputs.github-token }}
         IMAGE_REF: ${{ inputs.registry }}/${{ inputs.image-name }}@${{ steps.build.outputs.digest }}
         SEVERITY: ${{ inputs.trivy-severity }}
       run: |
         set -euo pipefail
 
-        # Install Trivy binary directly via GitHub Releases API.
+        # Install Trivy binary via gh CLI.
         # Avoids aquasecurity/trivy-action's setup-trivy step, which git-clones the
         # aquasecurity/trivy repo fetching refs/heads/main — but that repo's default
         # branch is 'master', causing a fatal fetch error on every run.
+        # gh CLI is pre-installed on ubuntu-latest and uses GH_TOKEN automatically.
         #
-        # Asset URLs are fetched from the release JSON to avoid constructing filenames
-        # manually (which breaks if Trivy's naming conventions change).
+        # Note: Trivy version is intentionally unpinned (always latest release).
+        # To pin, pass --tag vX.Y.Z to gh release download below.
 
         # Detect runner architecture to select the correct tarball
         ARCH=$(uname -m)
@@ -222,36 +245,23 @@ runs:
           *) echo "ERROR: Unsupported runner architecture: ${ARCH}"; exit 1 ;;
         esac
 
-        TRIVY_RELEASE=$(curl -fsSL \
-          -H "Authorization: Bearer ${GH_TOKEN}" \
-          "https://api.github.com/repos/aquasecurity/trivy/releases/latest")
-
-        TRIVY_URL=$(echo "${TRIVY_RELEASE}" \
-          | jq -r --arg arch "${TRIVY_ARCH}" \
-            '.assets[] | select(.name | test($arch + "\\.tar\\.gz$")) | .browser_download_url' \
-          | head -1)
-        CHECKSUM_URL=$(echo "${TRIVY_RELEASE}" \
-          | jq -r '.assets[] | select(.name == "checksums.txt") | .browser_download_url' \
-          | head -1)
-
-        if [[ -z "${TRIVY_URL}" || "${TRIVY_URL}" == "null" ]]; then
-          echo "ERROR: Could not find Trivy ${TRIVY_ARCH} tarball in release assets"
-          echo "Available assets:"; echo "${TRIVY_RELEASE}" | jq -r '.assets[].name'
-          exit 1
-        fi
-        if [[ -z "${CHECKSUM_URL}" || "${CHECKSUM_URL}" == "null" ]]; then
-          echo "ERROR: Could not find checksums.txt in Trivy release assets"
-          exit 1
-        fi
+        # Download into a temp dir so workspace is never polluted; cleanup is
+        # unconditional even if checksum verification fails.
+        TRIVY_WORK_DIR=$(mktemp -d)
+        trap 'rm -rf "${TRIVY_WORK_DIR}"' EXIT
 
         TARBALL="trivy_${TRIVY_ARCH}.tar.gz"
-        echo "Downloading Trivy from ${TRIVY_URL}..."
-        curl -fsSL "${TRIVY_URL}" -o "${TARBALL}"
-        curl -fsSL "${CHECKSUM_URL}" -o checksums.txt
-        grep "${TARBALL}" checksums.txt | sha256sum --check --status
-        tar -xzf "${TARBALL}" trivy
-        sudo mv trivy /usr/local/bin/trivy
-        rm "${TARBALL}" checksums.txt
+        echo "Downloading latest Trivy (${TRIVY_ARCH})..."
+        gh release download \
+          --repo aquasecurity/trivy \
+          --pattern "${TARBALL}" \
+          --pattern "checksums.txt" \
+          --dir "${TRIVY_WORK_DIR}"
+
+        grep "${TARBALL}" "${TRIVY_WORK_DIR}/checksums.txt" | sha256sum --check --status
+        tar -xzf "${TRIVY_WORK_DIR}/${TARBALL}" -C "${TRIVY_WORK_DIR}" trivy
+        # Add Trivy to PATH without requiring sudo
+        export PATH="${TRIVY_WORK_DIR}:${PATH}"
         trivy --version
 
         # Scan the image. Docker credentials from the prior login step give registry access.
@@ -264,10 +274,6 @@ runs:
           --ignore-unfixed \
           "${IMAGE_REF}"
 
-    - name: Set Trivy output
-      id: trivy-output
-      shell: bash
-      run: |
         echo "sarif-file=trivy-results.sarif" >> "$GITHUB_OUTPUT"
 
     - name: Upload Trivy scan results to GitHub Security tab
@@ -288,7 +294,8 @@ runs:
       id: sbom
       uses: anchore/sbom-action@f325610c9f50a54015d37c8d16cb3b0e2c8f4de0 # v0.18.0
       env:
-        SYFT_PLATFORM: ${{ inputs.platforms }}
+        # First platform only — Syft scans one manifest at a time
+        SYFT_PLATFORM: ${{ steps.scan-platform.outputs.value }}
       with:
         image: ${{ inputs.registry }}/${{ inputs.image-name }}@${{ steps.build.outputs.digest }}
         format: spdx-json
@@ -314,11 +321,16 @@ runs:
         IMAGE_TAG: ${{ steps.meta.outputs.version }}
         IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
         PLATFORMS: ${{ inputs.platforms }}
+        PR_NUMBER: ${{ inputs.pr-number }}
       run: |
-        echo "=== Build Summary ==="
-        echo "Image: ${REGISTRY}/${IMAGE_NAME}"
-        echo "Tag: ${IMAGE_TAG}"
-        echo "Digest: ${IMAGE_DIGEST}"
-        echo "Platform: ${PLATFORMS}"
-        echo "Trivy scan: trivy-results.sarif"
-        echo "SBOM: sbom-${{ inputs.pr-number }}.spdx.json"
+        {
+          echo "## Build Summary"
+          echo "| | |"
+          echo "|---|---|"
+          echo "| **Image** | \`${REGISTRY}/${IMAGE_NAME}\` |"
+          echo "| **Tag** | \`${IMAGE_TAG}\` |"
+          echo "| **Digest** | \`${IMAGE_DIGEST}\` |"
+          echo "| **Platform** | \`${PLATFORMS}\` |"
+          echo "| **Trivy scan** | \`trivy-results.sarif\` |"
+          echo "| **SBOM** | \`sbom-${PR_NUMBER}.spdx.json\` |"
+        } >> "$GITHUB_STEP_SUMMARY"
