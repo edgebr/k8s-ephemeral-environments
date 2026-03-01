@@ -221,18 +221,15 @@ runs:
       env:
         # First platform only — resolved by the scan-platform step above
         TRIVY_PLATFORM: ${{ steps.scan-platform.outputs.value }}
+        # GH_TOKEN lets curl use authenticated rate limits (5000 req/hr) when
+        # resolving the Trivy release. Unauthenticated API calls from shared
+        # runner IPs are heavily rate-limited and return 404 without an auth
+        # token or valid User-Agent. GITHUB_TOKEN reads public repos fine.
+        GH_TOKEN: ${{ inputs.github-token }}
         IMAGE_REF: ${{ inputs.registry }}/${{ inputs.image-name }}@${{ steps.build.outputs.digest }}
         SEVERITY: ${{ inputs.trivy-severity }}
       run: |
         set -euo pipefail
-
-        # Install Trivy by fetching the latest release metadata from the public
-        # GitHub API (no auth required — aquasecurity/trivy is a public repo),
-        # then downloading the binary and checksum from the CDN.
-        #
-        # Using curl directly (not gh api) because GITHUB_TOKEN is repo-scoped to
-        # the current repo; passing it as an Authorization header causes GitHub to
-        # return 404 for requests targeting a different org's repository.
 
         ARCH=$(uname -m)
         case "${ARCH}" in
@@ -244,27 +241,31 @@ runs:
         TRIVY_WORK_DIR=$(mktemp -d)
         trap 'rm -rf "${TRIVY_WORK_DIR}"' EXIT
 
-        # Resolve version by following the /releases/latest redirect — no API
-        # call, no auth token. GITHUB_TOKEN is repo-scoped, so authenticated
-        # calls to other orgs return 404; unauthenticated API hits rate limits.
+        # Resolve the latest release via the authenticated GitHub REST API.
+        # Authentication is required: unauthenticated calls from shared runner
+        # IPs return 404 (rate-limited). The token reads any public repo fine.
         echo "Resolving latest Trivy release..."
-        TRIVY_TAG=$(curl -fsSLI -o /dev/null -w "%{url_effective}" \
-          "https://github.com/aquasecurity/trivy/releases/latest" \
-          | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+$')
+        TRIVY_TAG=$(curl -fsSL \
+          -H "Authorization: Bearer ${GH_TOKEN}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          "https://api.github.com/repos/aquasecurity/trivy/releases/latest" \
+          | jq -r '.tag_name')
         TRIVY_VERSION="${TRIVY_TAG#v}"
 
-        if [[ -z "${TRIVY_TAG}" ]]; then
-          echo "ERROR: Could not determine Trivy version from release redirect"; exit 1
+        if [[ -z "${TRIVY_VERSION}" || "${TRIVY_VERSION}" == "null" ]]; then
+          echo "ERROR: Could not determine Trivy version from GitHub API"; exit 1
         fi
 
         # Construct direct CDN download URLs from the version tag.
+        # Checksum file is versioned: trivy_X.Y.Z_checksums.txt
         TARBALL="trivy_${TRIVY_VERSION}_${TRIVY_ARCH}.tar.gz"
+        CHECKSUM_FILE="trivy_${TRIVY_VERSION}_checksums.txt"
         BASE_URL="https://github.com/aquasecurity/trivy/releases/download/${TRIVY_TAG}"
         echo "Downloading Trivy ${TRIVY_TAG} (${TRIVY_ARCH})..."
         curl -fsSL "${BASE_URL}/${TARBALL}" -o "${TRIVY_WORK_DIR}/${TARBALL}"
-        curl -fsSL "${BASE_URL}/checksums.txt" -o "${TRIVY_WORK_DIR}/checksums.txt"
+        curl -fsSL "${BASE_URL}/${CHECKSUM_FILE}" -o "${TRIVY_WORK_DIR}/${CHECKSUM_FILE}"
 
-        grep "${TARBALL}" "${TRIVY_WORK_DIR}/checksums.txt" | sha256sum --check --status
+        grep "${TARBALL}" "${TRIVY_WORK_DIR}/${CHECKSUM_FILE}" | sha256sum --check --status
         tar -xzf "${TRIVY_WORK_DIR}/${TARBALL}" -C "${TRIVY_WORK_DIR}" trivy
         export PATH="${TRIVY_WORK_DIR}:${PATH}"
         trivy --version
