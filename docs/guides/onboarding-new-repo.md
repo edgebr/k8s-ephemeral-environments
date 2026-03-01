@@ -211,6 +211,8 @@ uses: koder-cat/k8s-ephemeral-environments/.github/workflows/pr-environment-reus
 uses: koder-cat/k8s-ephemeral-environments/.github/workflows/pr-environment-reusable.yml@79d3549
 ```
 
+> **Note:** Pinning the workflow ref automatically pins the entire k8s-ee stack — the reusable workflow, all composite actions, and Helm chart defaults are all checked out at the same ref. No extra `with:` parameters are needed.
+
 ---
 
 ## Resource Limits
