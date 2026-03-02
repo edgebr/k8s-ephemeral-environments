@@ -119,7 +119,7 @@ Controls how PR environments are created.
 trigger: on-demand
 ```
 
-> **Note:** On-demand mode requires `trigger: on-demand` in your `k8s-ee.yaml`. No workflow file changes are needed — the standard workflow template handles both modes. See [On-Demand Environments](../../wiki/On-Demand-Environments) for details.
+> **Note:** On-demand mode requires `trigger: on-demand` in your `k8s-ee.yaml`. The universal workflow template from the [Onboarding Guide](./onboarding-new-repo.md) handles both modes — once you have it, switching is a one-line config change. See [On-Demand Environments](../../wiki/On-Demand-Environments) for details.
 
 ---
 
@@ -636,7 +636,7 @@ databases:
   postgresql: true
 ```
 
-With this configuration, environments are only created when someone comments `/deploy-preview` on the PR. Use `/destroy-preview` to tear down the environment early. No workflow file changes needed — the standard workflow template handles both modes.
+With this configuration, environments are only created when someone comments `/deploy-preview` on the PR. Use `/destroy-preview` to tear down the environment early. Requires the universal workflow template from the [Onboarding Guide](./onboarding-new-repo.md).
 
 ### Monorepo Backend Service
 

@@ -98,7 +98,7 @@ databases:
 
 **[Full Configuration Reference](./k8s-ee-config-reference.md)** - All available options with examples.
 
-> **On-demand mode:** To create environments only when needed (via `/deploy-preview` comment), just add `trigger: on-demand` to your `k8s-ee.yaml` — no workflow changes needed.
+> **On-demand mode:** To create environments only when needed (via `/deploy-preview` comment), add `trigger: on-demand` to your `k8s-ee.yaml`. The universal workflow template below handles both modes — once you have it, switching between automatic and on-demand is a one-line config change.
 
 ### Step 2: Add Workflow File
 
