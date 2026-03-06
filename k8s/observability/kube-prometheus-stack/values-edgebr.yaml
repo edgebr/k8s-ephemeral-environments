@@ -1,0 +1,11 @@
+# Overlay for edgebr cluster
+# Applied after base values.yaml to override org-specific settings
+grafana:
+  # No OAuth secret yet - will be added via helm upgrade when credentials arrive
+  envFromSecret: null
+
+  grafana.ini:
+    server:
+      root_url: https://grafana.k8s-ee.edge.net.br
+    auth.github:
+      allowed_organizations: edgebr
