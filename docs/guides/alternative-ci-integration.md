@@ -83,7 +83,7 @@ Call the same Kubernetes operations from Jenkins instead of using GitHub Actions
 │                                                               │
 │  PR Opened/Updated:                PR Closed:                 │
 │  ├── Build image (ARM64)           ├── Delete namespace       │
-│  ├── Push to GHCR                  └── Post cleanup comment   │
+│  ├── Push to registry (GHCR/ECR)   └── Post cleanup comment   │
 │  ├── Create namespace                                         │
 │  ├── Apply ResourceQuota                                      │
 │  ├── Deploy with Helm                                         │
@@ -101,7 +101,7 @@ Call the same Kubernetes operations from Jenkins instead of using GitHub Actions
 | **Helm 3** | Installed on Jenkins agent |
 | **GitHub CLI** | For posting PR comments (or use API directly) |
 | **Docker/Podman** | For building ARM64 images |
-| **GHCR auth** | Token for pushing container images |
+| **Registry auth** | GHCR token or ECR IAM credentials for pushing container images |
 
 ### Jenkinsfile Example
 
@@ -115,7 +115,9 @@ pipeline {
         PROJECT_ID = 'myapp'
         NAMESPACE = "${PROJECT_ID}-pr-${env.CHANGE_ID}"
         PREVIEW_URL = "https://${NAMESPACE}.k8s-ee.genesluna.dev"
+        // For GHCR (default):
         IMAGE = "ghcr.io/${env.GITHUB_REPOSITORY}/${PROJECT_ID}:pr-${env.CHANGE_ID}"
+        // For ECR: IMAGE = "<account-id>.dkr.ecr.<region>.amazonaws.com/${env.GITHUB_REPOSITORY}/${PROJECT_ID}:pr-${env.CHANGE_ID}"
     }
 
     stages {
@@ -188,9 +190,12 @@ pipeline {
                         --namespace ${NAMESPACE} \
                         --set image.repository=$(echo ${IMAGE} | cut -d: -f1) \
                         --set image.tag=pr-${CHANGE_ID} \
+                        --set image.pullPolicy=Always \
+                        --set "imagePullSecrets[0].name=ghcr-pull-secret" \
                         --set ingress.host=${NAMESPACE}.k8s-ee.genesluna.dev \
                         --set postgresql.enabled=true \
                         --wait --timeout 5m
+                    # For ECR, use: --set "imagePullSecrets[0].name=ecr-pull-secret"
                 '''
             }
         }
@@ -244,6 +249,7 @@ Configure Jenkins to trigger on PR events:
 - No automatic organization allowlist validation
 - Must handle cleanup on PR close (or use the platform's cleanup CronJob)
 - ARM64 builds require `docker buildx` or a native ARM64 agent
+- For ECR, you must handle `aws ecr get-login-password` and image pull secret creation (see [ECR Registry Setup](./onboarding-new-repo.md#ecr-registry-setup-private-repos))
 
 ---
 
@@ -360,7 +366,7 @@ If your repository is hosted on GitLab or Bitbucket, you can still use k8s-ephem
 │  ├── Source of truth                 ├── Mirror repo                │
 │  ├── CI/CD (builds, tests)           ├── GitHub Actions             │
 │  ├── Code reviews                    │   └── Ephemeral environments │
-│  └── Deployments                     └── GHCR images                │
+│  └── Deployments                     └── Container images (GHCR/ECR)│
 │                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```

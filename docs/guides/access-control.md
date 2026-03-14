@@ -36,6 +36,7 @@ The allowlist is defined in `.github/config/allowed-orgs.json`:
   "mode": "allowlist",
   "description": "Organizations and users allowed to use k8s-ephemeral-environments",
   "organizations": [
+    "edgebr",
     "genesluna",
     "koder-cat"
   ],
@@ -161,7 +162,7 @@ git blame .github/config/allowed-orgs.json
 The organization allowlist controls which repos can **request** environments, while ARC runners control which repos can **execute** cluster operations.
 
 **Current setup:**
-- Allowlist: `genesluna`, `koder-cat`
+- Allowlist: `edgebr`, `genesluna`, `koder-cat`
 - ARC runners: Org-level for `koder-cat` (see `k8s/arc/README.md`)
 
 For a repo to use the platform, it must:
