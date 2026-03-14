@@ -7,8 +7,6 @@ Setting up a k3s cluster on EC2 (`ubuntu@13.58.99.235`) for the **edgebr** organ
 **Current EC2 state:** Ubuntu 24.04, x86_64, 4 vCPUs / 15GB RAM / 96GB disk. k3s v1.34.4 installed. Platform stack running (Steps 0-8 complete). ARC runners registered. TLS + Grafana Ingress live at `https://grafana.k8s-ee.edge.net.br`.
 
 **Remaining blockers:**
-- OAuth App credentials (Grafana) from edgebr DevOps — blocks Step 9
-- GITHUB_TOKEN for edgebr repos — blocks Step 11
 - Fork workflow adaptation (architecture `arm64` → `amd64`) — blocks end-to-end PR environments
 
 ## Plan
@@ -205,24 +203,19 @@ kubectl apply -f ~/k8s/platform/preserve-expiry/
 
 **Verified:** `curl -I https://grafana.k8s-ee.edge.net.br` → HTTP/2 302 with valid Let's Encrypt TLS
 
-### Step 9: Grafana OAuth ⏳ (needs OAuth App credentials)
+### Step 9: Grafana OAuth ✅
 
-When Client ID and Client Secret arrive:
+**Completed 2026-03-14.** OAuth enabled for Grafana via GitHub OAuth App.
 
-```bash
-kubectl create secret generic grafana-oauth-secrets \
-  --namespace observability \
-  --from-literal=GF_AUTH_GITHUB_CLIENT_ID="CLIENT_ID" \
-  --from-literal=GF_AUTH_GITHUB_CLIENT_SECRET="CLIENT_SECRET"
+**Secrets created on cluster:**
+- `grafana-oauth-secrets` in `observability` (GF_AUTH_GITHUB_CLIENT_ID, GF_AUTH_GITHUB_CLIENT_SECRET)
 
-# Upgrade to enable OAuth (remove the null override)
-helm upgrade prometheus prometheus-community/kube-prometheus-stack \
-  -n observability \
-  -f ~/k8s/observability/kube-prometheus-stack/values.yaml \
-  -f ~/k8s/observability/kube-prometheus-stack/values-edgebr-with-oauth.yaml
-```
+**Files created:**
+- `k8s/observability/kube-prometheus-stack/values-edgebr-with-oauth.yaml` — Overlay with `envFromSecret: "grafana-oauth-secrets"` and `allowed_organizations: edgebr`
 
-Where `values-edgebr-with-oauth.yaml` is the same overlay but with `envFromSecret: "grafana-oauth-secrets"` instead of `null`.
+**Helm release:** `prometheus` upgraded to revision 2 with OAuth overlay
+
+**Verified:** `https://grafana.k8s-ee.edge.net.br/login` returns HTTP/2 200 with GitHub OAuth login available
 
 ### Step 10: KUBECONFIG for GitHub Actions ✅
 
@@ -233,18 +226,18 @@ Where `values-edgebr-with-oauth.yaml` is the same overlay but with `envFromSecre
 - Test PR verified: ARC runner spun up, kubectl connected, listed nodes and namespaces successfully.
 - The fork's existing workflows (`PR Environment`) fail with `Exec format error` because `.github/actions/setup-tools` defaults to `architecture: arm64` (original VPS). **Fork workflows must be adapted to use `architecture: amd64` for the EC2 cluster.**
 
-### Step 11: Cleanup Job ⏳ (needs GITHUB_TOKEN)
+### Step 11: Cleanup Job ✅
 
-Create a GitHub PAT or fine-grained token that can read PR status in edgebr repos:
+**Completed 2026-03-14.** Cleanup CronJob deployed with fine-grained PAT (scoped to `edgebr/k8s-ephemeral-environments`, `Pull requests: Read-only`).
 
-```bash
-kubectl create secret generic github-cleanup-token \
-  --namespace platform \
-  --from-literal=GITHUB_TOKEN="ghp_xxx"
+**Secrets created on cluster:**
+- `github-cleanup-token` in `platform` (GITHUB_TOKEN)
 
-kubectl apply -f ~/k8s/platform/cleanup-job/cleanup-configmap.yaml
-kubectl apply -f ~/k8s/platform/cleanup-job/cleanup-cronjob.yaml
-```
+**Resources applied:**
+- `cleanup-script` ConfigMap
+- `cleanup-orphaned-namespaces` CronJob (runs every 6h)
+
+**Verified:** Both `cleanup-orphaned-namespaces` and `preserve-expiry` cronjobs active in `platform` namespace
 
 ---
 

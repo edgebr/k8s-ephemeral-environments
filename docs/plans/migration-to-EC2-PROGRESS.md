@@ -14,12 +14,13 @@
 - [x] **Step 7:** ARC runner scale set (registered with GitHub, listener running)
 - [x] **Step 8:** TLS + Grafana ingress (Route 53 DNS challenge, Let's Encrypt cert issued)
 
+- [x] **Step 9:** Grafana OAuth (GitHub OAuth App configured, login via GitHub enabled)
 - [x] **Step 10:** KUBECONFIG GitHub secret (set via `gh secret set`, uses internal IP `192.168.23.55`)
+- [x] **Step 11:** Cleanup CronJob (fine-grained PAT, cleanup-orphaned-namespaces every 6h)
 
 ## Blocked Steps
 
-- [ ] **Step 9:** Grafana OAuth — _blocked on OAuth App credentials_
-- [ ] **Step 11:** Cleanup CronJob — _blocked on GITHUB_TOKEN_
+_(none)_
 
 ## Pending (no external blockers)
 
@@ -29,11 +30,11 @@
 
 - [x] EC2 resize to >= 16 GB RAM (4 vCPU / 15 GB confirmed)
 - [x] GitHub App for ARC (App ID: 2999114, Installation ID: 113788735, .pem)
-- [ ] OAuth App for Grafana (Client ID, Client Secret)
+- [x] OAuth App for Grafana (Client ID, Client Secret)
 - [x] DNS wildcard `*.k8s-ee.edge.net.br` → EC2 Elastic IP
 - [x] AWS IAM credentials for Route 53 (Access Key + Hosted Zone ID + email ACME)
 - [x] Fork `koder-cat/k8s-ephemeral-environments` → `edgebr/k8s-ephemeral-environments`
-- [ ] GITHUB_TOKEN for cleanup job (PAT with PR read access)
+- [x] GITHUB_TOKEN for cleanup job (fine-grained PAT with PR read access)
 
 ## Installed Versions
 
@@ -66,3 +67,5 @@
 | 2026-03-12 | Executed Step 8 (TLS + Grafana Ingress) | Route 53 DNS challenge, Let's Encrypt cert issued, Grafana live at `https://grafana.k8s-ee.edge.net.br` |
 | 2026-03-12 | Executed Step 7 (ARC Runner Scale Set) | Registered with GitHub, listener pod running. Note: required App permission approval on installation side. |
 | 2026-03-12 | Executed Step 10 (KUBECONFIG secret) | Set on `edgebr/k8s-ephemeral-environments` using internal IP. Test PR verified ARC runner + kubectl connectivity. |
+| 2026-03-14 | Executed Step 9 (Grafana OAuth) | OAuth secret created, helm upgraded to revision 2 with OAuth overlay. GitHub login enabled at `https://grafana.k8s-ee.edge.net.br`. |
+| 2026-03-14 | Executed Step 11 (Cleanup CronJob) | Fine-grained PAT created, secret + configmap + cronjob applied. Both cronjobs active in `platform` namespace. |

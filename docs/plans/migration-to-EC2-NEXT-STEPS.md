@@ -16,8 +16,8 @@ Além disso, os workflows do fork precisam ser adaptados para arquitetura `amd64
 | 2 | ~~**DNS**: wildcard `*.k8s-ee.edge.net.br`~~ | ~~Passo 8~~ | ✅ Recebido |
 | 3 | ~~**Credenciais AWS para TLS**: IAM Access Key + Hosted Zone ID + email ACME~~ | ~~Passo 8~~ | ✅ Recebido |
 | 4 | ~~**Fork** `koder-cat/k8s-ephemeral-environments` → `edgebr/k8s-ephemeral-environments`~~ | ~~Passo 10~~ | ✅ Recebido |
-| 5 | **OAuth App** para Grafana: Client ID, Client Secret | Passo 9 | Pendente |
-| 6 | **GITHUB_TOKEN**: PAT com acesso de leitura a PRs dos repos da edgebr | Passo 11 | Pendente |
+| 5 | ~~**OAuth App** para Grafana: Client ID, Client Secret~~ | ~~Passo 9~~ | ✅ Recebido |
+| 6 | ~~**GITHUB_TOKEN**: PAT com acesso de leitura a PRs dos repos da edgebr~~ | ~~Passo 11~~ | ✅ Recebido |
 
 ---
 
@@ -40,45 +40,12 @@ Verificado: `curl -I https://grafana.k8s-ee.edge.net.br` → HTTP/2 302 com TLS 
 
 ---
 
-### 3. Grafana OAuth (Passo 9)
+### 3. ~~Grafana OAuth (Passo 9)~~ ✅ Concluído em 2026-03-14
 
-**Necessita:** Credenciais do OAuth App (item 5) + Passo 8 completo
-
-Na EC2:
-```bash
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-
-kubectl create secret generic grafana-oauth-secrets \
-  --namespace observability \
-  --from-literal=GF_AUTH_GITHUB_CLIENT_ID="<CLIENT_ID>" \
-  --from-literal=GF_AUTH_GITHUB_CLIENT_SECRET="<CLIENT_SECRET>"
-```
-
-Criar `k8s/observability/kube-prometheus-stack/values-edgebr-with-oauth.yaml` localmente:
-```yaml
-# Overlay para o cluster edgebr - com OAuth habilitado
-grafana:
-  envFromSecret: "grafana-oauth-secrets"
-
-  grafana.ini:
-    server:
-      root_url: https://grafana.k8s-ee.edge.net.br
-    auth.github:
-      allowed_organizations: edgebr
-```
-
-```bash
-scp k8s/observability/kube-prometheus-stack/values-edgebr-with-oauth.yaml \
-  ubuntu@13.58.99.235:~/k8s/observability/kube-prometheus-stack/
-
-ssh ubuntu@13.58.99.235 "export KUBECONFIG=/etc/rancher/k3s/k3s.yaml && \
-  helm upgrade prometheus prometheus-community/kube-prometheus-stack \
-    -n observability \
-    -f ~/k8s/observability/kube-prometheus-stack/values.yaml \
-    -f ~/k8s/observability/kube-prometheus-stack/values-edgebr-with-oauth.yaml"
-```
-
-**Verificar:** Login via GitHub OAuth funciona em `https://grafana.k8s-ee.edge.net.br`
+Secret criado: `grafana-oauth-secrets` em `observability`
+Arquivo criado: `k8s/observability/kube-prometheus-stack/values-edgebr-with-oauth.yaml`
+Helm release: `prometheus` atualizado para revisão 2 com overlay OAuth
+Verificado: `https://grafana.k8s-ee.edge.net.br/login` → HTTP/2 200 com login via GitHub OAuth
 
 ---
 
@@ -92,23 +59,11 @@ Teste verificado: runner ARC subiu, kubectl conectou, listou nodes e namespaces.
 
 ---
 
-### 5. Cleanup CronJob (Passo 11)
+### 5. ~~Cleanup CronJob (Passo 11)~~ ✅ Concluído em 2026-03-14
 
-**Necessita:** GITHUB_TOKEN (item 6)
-
-Na EC2:
-```bash
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-
-kubectl create secret generic github-cleanup-token \
-  --namespace platform \
-  --from-literal=GITHUB_TOKEN="<TOKEN>"
-
-kubectl apply -f ~/k8s/platform/cleanup-job/cleanup-configmap.yaml
-kubectl apply -f ~/k8s/platform/cleanup-job/cleanup-cronjob.yaml
-```
-
-**Verificar:** `kubectl get cronjobs -n platform` mostra tanto `cleanup` quanto `preserve-expiry`
+Secret criado: `github-cleanup-token` em `platform` (fine-grained PAT, `Pull requests: Read-only`)
+Recursos aplicados: `cleanup-script` ConfigMap + `cleanup-orphaned-namespaces` CronJob (a cada 6h)
+Verificado: `kubectl get cronjobs -n platform` mostra tanto `cleanup-orphaned-namespaces` quanto `preserve-expiry`
 
 ---
 

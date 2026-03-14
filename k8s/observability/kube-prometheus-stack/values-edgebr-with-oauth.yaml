@@ -1,0 +1,10 @@
+# Overlay for edgebr cluster - with OAuth enabled
+# Applied after base values.yaml to override org-specific settings
+grafana:
+  envFromSecret: "grafana-oauth-secrets"
+
+  grafana.ini:
+    server:
+      root_url: https://grafana.k8s-ee.edge.net.br
+    auth.github:
+      allowed_organizations: edgebr
