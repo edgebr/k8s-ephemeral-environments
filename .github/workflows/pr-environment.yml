@@ -49,4 +49,6 @@ jobs:
       platforms: linux/${{ vars.ARCHITECTURE || 'arm64' }}
       k8s-ee-repo: ${{ vars.ORG_NAME || 'koder-cat' }}/k8s-ephemeral-environments
       architecture: ${{ vars.ARCHITECTURE || 'arm64' }}
+      registry-type: ${{ vars.REGISTRY_TYPE || 'ghcr' }}
+      ecr-region: ${{ vars.ECR_REGION || '' }}
     secrets: inherit

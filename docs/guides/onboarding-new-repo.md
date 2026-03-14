@@ -87,17 +87,19 @@ The platform uses the following authentication:
 
 ## Fork / Multi-Cluster Setup
 
-If you're running your own k8s-ee cluster (not the upstream koder-cat instance), set these 3 **repository variables** on the fork. No file changes needed — all workflows read these variables with sensible defaults.
+If you're running your own k8s-ee cluster (not the upstream koder-cat instance), set these **repository variables** on the fork. No file changes needed — all workflows read these variables with sensible defaults.
 
 | Variable | Default (koder-cat) | Description |
 |----------|---------------------|-------------|
 | `ARCHITECTURE` | `arm64` | Target architecture for tool/image builds (`arm64` or `amd64`) |
 | `DOMAIN` | `k8s-ee.genesluna.dev` | Base domain for preview URLs |
 | `ORG_NAME` | `koder-cat` | GitHub organization name (used in CLA, issue URLs) |
+| `REGISTRY_TYPE` | `ghcr` | Container registry: `ghcr` or `ecr` |
+| `ECR_REGION` | _(none)_ | AWS region for ECR (required when `REGISTRY_TYPE` is `ecr`) |
 
 Set them at **Settings → Secrets and variables → Actions → Variables → New repository variable**.
 
-For ECR registry support, additional configuration is passed as workflow inputs — see [ECR Registry Setup](#ecr-registry-setup-private-repos).
+> **Note:** For ECR, also configure org secrets `ECR_AWS_ACCESS_KEY_ID` and `ECR_AWS_SECRET_ACCESS_KEY`. See [ECR Registry Setup](#ecr-registry-setup-private-repos) for details.
 
 ---
 
