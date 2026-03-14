@@ -227,6 +227,30 @@ ssh ubuntu@168.138.151.63 "kubectl get pods -n observability -l app.kubernetes.i
 
 **Best Practice:** Prefer using sidecar auto-reload for dashboard changes instead of restarting Grafana.
 
+### Datasource provisioning error after enabling sidecar on existing cluster
+
+**Symptoms:** Pod in CrashLoopBackOff after enabling `initDatasources: true` on a cluster that previously had manually-created datasources.
+
+**Cause:** The SQLite database (on the Grafana PVC) contains datasources with different UIDs than the provisioned ones. The provisioning system fails to reconcile them.
+
+**Fix:**
+
+1. Rollback to restore the old working pod:
+   ```bash
+   kubectl rollout undo deployment prometheus-grafana -n observability
+   ```
+
+2. Scale down, delete the PVC, then re-upgrade:
+   ```bash
+   kubectl scale deployment prometheus-grafana -n observability --replicas=0
+   kubectl delete pvc prometheus-grafana -n observability
+   helm upgrade prometheus prometheus-community/kube-prometheus-stack -n observability -f values.yaml
+   ```
+
+3. The new pod will start with a fresh DB and the init container will provision datasources correctly.
+
+> **Note:** This is a one-time migration step. Deleting the PVC also removes any manually-created dashboards or org settings. Dashboards provisioned via ConfigMaps are not affected.
+
 ### ConfigMap not updating
 
 ```bash

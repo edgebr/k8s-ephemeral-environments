@@ -69,3 +69,6 @@ _(none)_
 | 2026-03-12 | Executed Step 10 (KUBECONFIG secret) | Set on `edgebr/k8s-ephemeral-environments` using internal IP. Test PR verified ARC runner + kubectl connectivity. |
 | 2026-03-14 | Executed Step 9 (Grafana OAuth) | OAuth secret created, helm upgraded to revision 2 with OAuth overlay. GitHub login enabled at `https://grafana.k8s-ee.edge.net.br`. |
 | 2026-03-14 | Executed Step 11 (Cleanup CronJob) | Fine-grained PAT created, secret + configmap + cronjob applied. Both cronjobs active in `platform` namespace. |
+| 2026-03-14 | Fixed NetworkPolicy K8s API egress | Dynamic ClusterIP + endpoint IP resolution, both IPs on ports 443/6443. RBAC: added `endpoints` to runner SA. |
+| 2026-03-14 | Fixed Grafana datasource provisioning | Enabled datasource sidecar as init container (`initDatasources: true`, `watchMethod: LIST`). Fixed on both EC2 and Oracle VPS (PVC reset required on Oracle). |
+| 2026-03-14 | Deployed custom dashboards to EC2 | Copied ConfigMap from Oracle, all dashboards working. |
