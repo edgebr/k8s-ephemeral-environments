@@ -248,6 +248,10 @@ runs:
         registry: ${{ steps.resolve-registry.outputs.url }}
         username: AWS
         password: ${{ steps.resolve-registry.outputs.password }}
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.ecr-aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.ecr-aws-secret-access-key }}
+        AWS_REGION: ${{ inputs.ecr-region }}
 
     - name: Extract metadata
       id: meta
