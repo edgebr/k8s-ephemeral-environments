@@ -19,9 +19,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ### Milestone 1: Platform Migration (Days 1-4)
 
-- [ ] **Phase 1: Platform Fixes & x86 Support** - Foundation fixes and architecture migration
+- [~] **Phase 1: Platform Fixes & x86 Support** - Foundation fixes and architecture migration _(5/6 done; only PLAT-02 partial)_
 - [ ] **Phase 2: ECR Registry Integration** - AWS ECR push via OIDC authentication
-- [ ] **Phase 3: Infrastructure Setup** - Edge cluster deployment and configuration
+- [x] **Phase 3: Infrastructure Setup** - Edge cluster deployment and configuration _(completed 2026-03-14)_
 
 ### Milestone 2: Pilot Project Enablement (Days 5-8)
 
@@ -31,20 +31,19 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ## Phase Details
 
-### Phase 1: Platform Fixes & x86 Support
+### Phase 1: Platform Fixes & x86 Support (~Done)
 **Goal**: Platform is architecture-agnostic with configurable networking, enabling deployment on x86 infrastructure
 **Depends on**: Nothing (first phase)
 **Requirements**: PLAT-01, PLAT-02, PLAT-03, X86-01, X86-02, X86-03
 **Success Criteria** (what must be TRUE):
-  1. NetworkPolicy port is configurable via k8s-ee.yaml (tested with port 8080)
-  2. Ingress controller selector works with non-Traefik controllers (ALB/Nginx)
-  3. Build pipeline produces linux/amd64 images by default
-  4. Helm charts deploy successfully on x86 nodes (nodeSelector verified)
-**Plans**: TBD
+  1. ✅ NetworkPolicy port is configurable via k8s-ee.yaml (`app-port` input parameterized)
+  2. ⚠️ Ingress controller selector works with non-Traefik controllers — partial: `ingressClassName` parameterized, but Traefik-specific annotations in `values.yaml` and pod selectors in NetworkPolicy are still hardcoded. **Acceptable for pilot** (EC2 cluster uses Traefik).
+  3. ✅ Build pipeline supports linux/amd64 images (configurable via `platforms` input + `ARCHITECTURE` repo variable)
+  4. ✅ Helm charts deploy on x86 nodes (X86-02 nodeSelector not needed — single-arch cluster)
 
 Plans:
-- [ ] 01-01: Platform configuration fixes (PLAT-01, PLAT-02, PLAT-03)
-- [ ] 01-02: x86 architecture support (X86-01, X86-02, X86-03)
+- [x] 01-01: Platform configuration fixes (PLAT-01 done, PLAT-02 partial, PLAT-03 done)
+- [x] 01-02: x86 architecture support (X86-01 done via input, X86-02 N/A, X86-03 done via input)
 
 ### Phase 2: ECR Registry Integration
 **Goal**: GitHub Actions can push images to AWS ECR using OIDC authentication
@@ -59,20 +58,22 @@ Plans:
 Plans:
 - [ ] 02-01: ECR integration (ECR-01, ECR-02, ECR-03)
 
-### Phase 3: Infrastructure Setup
+### Phase 3: Infrastructure Setup ✅
 **Goal**: Edge organization infrastructure is operational with all platform components
 **Depends on**: Phase 2 (ECR needed for custom image deployments)
 **Requirements**: INFRA-01, INFRA-02, INFRA-03, INFRA-04, INFRA-05, INFRA-06, INFRA-07
 **Success Criteria** (what must be TRUE):
-  1. k3s cluster is running on AWS EC2 with kubectl access
-  2. Edge organization can trigger PR environment workflows
-  3. Preview URLs resolve at *.preview.edge.ufal.br with valid TLS
-  4. Observability stack (Prometheus, Loki, Grafana) is accessible
-**Plans**: TBD
+  1. ✅ k3s cluster is running on AWS EC2 with kubectl access (v1.34.4+k3s1, `ubuntu@13.58.99.235`)
+  2. ✅ Edge organization can trigger PR environment workflows (ARC runner registered, KUBECONFIG secret set)
+  3. ✅ Preview URLs resolve at `*.k8s-ee.edge.net.br` with valid TLS (Let's Encrypt via Route 53 DNS challenge)
+  4. ✅ Observability stack (Prometheus, Loki, Grafana) is accessible (`https://grafana.k8s-ee.edge.net.br` with GitHub OAuth)
+**Completed**: 2026-03-14 (see `docs/plans/migration-to-EC2-PROGRESS.md` for full step-by-step log)
+
+**Note**: Domain changed from original plan (`*.preview.edge.ufal.br` → `*.k8s-ee.edge.net.br`). TLS uses Let's Encrypt instead of ACM. INFRA-01 (allowlist) is configured on the `edgebr` fork, not on upstream.
 
 Plans:
-- [ ] 03-01: Edge organization setup (INFRA-01, INFRA-02, INFRA-03, INFRA-04)
-- [ ] 03-02: Cluster deployment (INFRA-05, INFRA-06, INFRA-07)
+- [x] 03-01: Edge organization setup (INFRA-01, INFRA-02, INFRA-03, INFRA-04)
+- [x] 03-02: Cluster deployment (INFRA-05, INFRA-06, INFRA-07)
 
 ### Phase 4: Multi-Container Support
 **Goal**: k8s-ee-app chart supports multiple containers per pod for complex applications
@@ -123,13 +124,14 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Platform Fixes & x86 Support | M1 | 0/2 | Not started | - |
+| 1. Platform Fixes & x86 Support | M1 | 2/2 | **~Done** (PLAT-02 partial, acceptable for pilot) | 2026-03-14 |
 | 2. ECR Registry Integration | M1 | 0/1 | Not started | - |
-| 3. Infrastructure Setup | M1 | 0/2 | Not started | - |
+| 3. Infrastructure Setup | M1 | 2/2 | **Done** | 2026-03-14 |
 | 4. Multi-Container Support | M2 | 0/1 | Not started | - |
 | 5. Samba AD Chart | M2 | 0/1 | Not started | - |
 | 6. Pilot Project Integration | M2 | 0/1 | Not started | - |
 
 ---
 *Roadmap created: 2026-01-25*
+*Last updated: 2026-03-14 — Phase 3 completed (EC2 cluster fully operational)*
 *Coverage: 30/30 requirements mapped*

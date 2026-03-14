@@ -9,15 +9,15 @@ Platform adaptation for x86/AWS/ECR and infrastructure deployment.
 
 ### Platform Fixes
 
-- [ ] **PLAT-01**: NetworkPolicy port configurable via k8s-ee.yaml (not hardcoded to 3000)
-- [ ] **PLAT-02**: Ingress controller selector parameterized (not hardcoded Traefik labels)
-- [ ] **PLAT-03**: Kubernetes API IP configurable per deployment (not hardcoded 10.0.0.39)
+- [x] **PLAT-01**: NetworkPolicy port configurable via k8s-ee.yaml (not hardcoded to 3000) _(`app-port` input parameterized in create-namespace action and NetworkPolicy template)_
+- [ ] **PLAT-02**: Ingress controller selector parameterized (not hardcoded Traefik labels) _(partial: `ingressClassName` parameterized, but Traefik annotations in values.yaml and pod selectors in NetworkPolicy still hardcoded)_
+- [x] **PLAT-03**: Kubernetes API IP configurable per deployment (not hardcoded 10.0.0.39) _(dynamically resolved via `kubectl get svc/endpoints kubernetes`, fixed 2026-03-14)_
 
 ### x86 Architecture Support
 
-- [ ] **X86-01**: Build pipeline targets `linux/amd64` architecture by default
-- [ ] **X86-02**: All Helm chart templates include `nodeSelector: kubernetes.io/arch: amd64`
-- [ ] **X86-03**: Tool binaries (kubectl, helm) in setup-tools action default to amd64
+- [x] **X86-01**: Build pipeline supports `linux/amd64` architecture _(configurable via `platforms` workflow input; upstream defaults to arm64 for Oracle VPS, forks override via repo variable `ARCHITECTURE=amd64`)_
+- [~] **X86-02**: ~~All Helm chart templates include `nodeSelector: kubernetes.io/arch: amd64`~~ _(not needed: EC2 cluster is single-architecture x86_64, no mixed-arch scheduling risk)_
+- [x] **X86-03**: Tool binaries (kubectl, helm) support amd64 _(configurable via `architecture` workflow input; upstream defaults to arm64, forks override via repo variable `ARCHITECTURE=amd64`)_
 
 ### ECR Registry Integration
 
@@ -27,13 +27,13 @@ Platform adaptation for x86/AWS/ECR and infrastructure deployment.
 
 ### Infrastructure Setup
 
-- [ ] **INFRA-01**: Edge organization added to allowed-orgs.json
-- [ ] **INFRA-02**: GitHub App created and installed on Edge organization
-- [ ] **INFRA-03**: DNS wildcard configured for preview.edge.ufal.br
-- [ ] **INFRA-04**: ACM certificate provisioned for *.preview.edge.ufal.br
-- [ ] **INFRA-05**: k3s installed on AWS EC2 instance (x86)
-- [ ] **INFRA-06**: Operators deployed (CloudNativePG, MinIO Operator)
-- [ ] **INFRA-07**: Observability stack deployed (Prometheus, Loki, Grafana)
+- [x] **INFRA-01**: Edge organization added to allowed-orgs.json _(on edgebr fork; upstream has genesluna + koder-cat only)_
+- [x] **INFRA-02**: GitHub App created and installed on Edge organization _(App ID: 2999114, Installation ID: 113788735)_
+- [x] **INFRA-03**: DNS wildcard configured _(domain changed: `*.k8s-ee.edge.net.br` → EC2 Elastic IP)_
+- [x] **INFRA-04**: TLS certificate provisioned _(Let's Encrypt via Route 53 DNS challenge, not ACM)_
+- [x] **INFRA-05**: k3s installed on AWS EC2 instance (x86) _(v1.34.4+k3s1, Ubuntu 24.04, 4 vCPU / 15 GB RAM)_
+- [x] **INFRA-06**: Operators deployed _(CloudNativePG, MongoDB Community Operator, MinIO Operator)_
+- [x] **INFRA-07**: Observability stack deployed _(Prometheus, Loki, Promtail, Grafana with GitHub OAuth)_
 
 ## Milestone 2: Pilot Project Enablement (Days 5-8)
 
@@ -79,22 +79,22 @@ Multi-container support, Samba AD, and htm-gestor-documentos integration.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PLAT-01 | Phase 1 | Pending |
-| PLAT-02 | Phase 1 | Pending |
-| PLAT-03 | Phase 1 | Pending |
-| X86-01 | Phase 1 | Pending |
-| X86-02 | Phase 1 | Pending |
-| X86-03 | Phase 1 | Pending |
+| PLAT-01 | Phase 1 | **Done** |
+| PLAT-02 | Phase 1 | Partial (ingressClassName ok, Traefik annotations/selectors hardcoded) |
+| PLAT-03 | Phase 1 | **Done** (2026-03-14) |
+| X86-01 | Phase 1 | **Done** (configurable via input/repo variable) |
+| X86-02 | Phase 1 | **N/A** (single-arch cluster, not needed) |
+| X86-03 | Phase 1 | **Done** (configurable via input/repo variable) |
 | ECR-01 | Phase 2 | Pending |
 | ECR-02 | Phase 2 | Pending |
 | ECR-03 | Phase 2 | Pending |
-| INFRA-01 | Phase 3 | Pending |
-| INFRA-02 | Phase 3 | Pending |
-| INFRA-03 | Phase 3 | Pending |
-| INFRA-04 | Phase 3 | Pending |
-| INFRA-05 | Phase 3 | Pending |
-| INFRA-06 | Phase 3 | Pending |
-| INFRA-07 | Phase 3 | Pending |
+| INFRA-01 | Phase 3 | **Done** (2026-03-05) |
+| INFRA-02 | Phase 3 | **Done** (2026-03-05) |
+| INFRA-03 | Phase 3 | **Done** (2026-03-12) |
+| INFRA-04 | Phase 3 | **Done** (2026-03-12) |
+| INFRA-05 | Phase 3 | **Done** (2026-03-05) |
+| INFRA-06 | Phase 3 | **Done** (2026-03-05) |
+| INFRA-07 | Phase 3 | **Done** (2026-03-05) |
 | MULTI-01 | Phase 4 | Pending |
 | MULTI-02 | Phase 4 | Pending |
 | MULTI-03 | Phase 4 | Pending |
@@ -119,4 +119,4 @@ Multi-container support, Samba AD, and htm-gestor-documentos integration.
 
 ---
 *Requirements defined: 2026-01-25*
-*Last updated: 2026-01-25 after roadmap creation*
+*Last updated: 2026-03-14 — Phase 1 nearly complete (only PLAT-02 partial), Phase 3 done*
