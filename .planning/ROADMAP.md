@@ -2,12 +2,12 @@
 
 ## Overview
 
-This roadmap transforms the k8s-ephemeral-environments platform from ARM64 (Oracle Cloud) to x86 (AWS) for Edge/UFAL's pilot deployment. Starting with platform fixes and architecture migration, then ECR integration and infrastructure setup, followed by multi-container support, Samba AD chart development, and finally pilot project integration. The goal is a fully functional preview environment for htm-gestor-documentos (frontend + backend + Samba AD + PostgreSQL + MinIO) operational in 8 days.
+This roadmap transforms the k8s-ephemeral-environments platform from ARM64 (Oracle Cloud) to x86 (AWS) for Edge/UFAL's pilot deployment. Starting with platform fixes and architecture migration, then ECR integration and infrastructure setup, and finally pilot project integration using a combined single image with mock authentication. The goal is a fully functional preview environment for htm-gestor-documentos (frontend + backend + PostgreSQL + MinIO) operational in 6 days.
 
 ## Milestones
 
 - [ ] **Milestone 1: Platform Migration** - Phases 1-3 (Days 1-4)
-- [ ] **Milestone 2: Pilot Project Enablement** - Phases 4-6 (Days 5-8)
+- [ ] **Milestone 2: Pilot Project Enablement** - Phase 4 (Days 5-6)
 
 ## Phases
 
@@ -23,11 +23,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: ECR Registry Integration** - Registry-agnostic build/deploy (GHCR + ECR)
 - [x] **Phase 3: Infrastructure Setup** - Edge cluster deployment and configuration _(completed 2026-03-14)_
 
-### Milestone 2: Pilot Project Enablement (Days 5-8)
+### Milestone 2: Pilot Project Enablement (Days 5-6)
 
-- [ ] **Phase 4: Multi-Container Support** - Multi-container pod deployment capability
-- [ ] **Phase 5: Samba AD Chart** - Active Directory authentication service
-- [ ] **Phase 6: Pilot Project Integration** - htm-gestor-documentos deployment validation
+- [ ] **Phase 4: Pilot Project Integration** - htm-gestor-documentos deployment validation (combined image + mock auth)
 
 ## Phase Details
 
@@ -87,63 +85,57 @@ Plans:
 - [x] 03-01: Edge organization setup (INFRA-01, INFRA-02, INFRA-03, INFRA-04)
 - [x] 03-02: Cluster deployment (INFRA-05, INFRA-06, INFRA-07)
 
-### Phase 4: Multi-Container Support
+### Phase 4: Pilot Project Integration
+**Goal**: htm-gestor-documentos team can open a PR and get a working preview environment
+**Depends on**: Phase 3 (infrastructure)
+**Requirements**: PILOT-01, PILOT-02, PILOT-03, PILOT-04, PILOT-05
+**Approach**: Combined single image (Dockerfile.k8s-ee bundles backend + frontend) with mock authentication (AUTH_BYPASS_LDAP + seeded test users). No multi-container support or Samba AD needed.
+**Success Criteria** (what must be TRUE):
+  1. PR opened in htm-gestor-documentos creates namespace with all components
+  2. Combined image (frontend + backend), PostgreSQL, and MinIO all start successfully
+  3. Mock auth works (seeded users + AUTH_BYPASS_LDAP)
+  4. PR closed/merged triggers namespace cleanup
+  5. Edge team has documentation to operate and troubleshoot environments
+**Plans**: TBD
+
+Plans:
+- [ ] 04-01: Pilot project configuration and validation (PILOT-01, PILOT-02, PILOT-03, PILOT-04, PILOT-05)
+
+## Future Roadmap (Deferred from Pilot)
+
+These features were evaluated for the pilot but deferred to the main project roadmap.
+
+### Multi-Container Support
 **Goal**: k8s-ee-app chart supports multiple containers per pod for complex applications
-**Depends on**: Phase 1 (chart modifications require platform baseline)
 **Requirements**: MULTI-01, MULTI-02, MULTI-03, MULTI-04, MULTI-05
+**Rationale for deferral**: Combined single image works for the pilot. Multi-container support is a general platform capability that benefits all users, not just this pilot.
 **Success Criteria** (what must be TRUE):
   1. k8s-ee.yaml can define multiple containers (main + sidecars)
   2. Containers share localhost networking within the pod
   3. Shared volumes (emptyDir) work between containers
   4. Resource quota calculation accounts for all containers in pod
-**Plans**: TBD
 
-Plans:
-- [ ] 04-01: Multi-container chart extension (MULTI-01, MULTI-02, MULTI-03, MULTI-04, MULTI-05)
-
-### Phase 5: Samba AD Chart
-**Goal**: Samba Active Directory runs in Kubernetes for LDAP authentication testing
-**Depends on**: Phase 3 (infrastructure must be operational), Phase 4 (may run as sidecar)
-**Requirements**: AD-01, AD-02, AD-03, AD-04, AD-05
-**Success Criteria** (what must be TRUE):
-  1. Samba AD starts successfully with stable network identity (StatefulSet)
-  2. LDAP bind works from application container using generated credentials
-  3. Privileged container security exception is properly scoped to namespace
-  4. DNS resolution documented (CoreDNS forwarding if required)
-**Plans**: TBD
-
-Plans:
-- [ ] 05-01: Samba AD Helm chart development (AD-01, AD-02, AD-03, AD-04, AD-05)
-
-### Phase 6: Pilot Project Integration
-**Goal**: htm-gestor-documentos team can open a PR and get a working preview environment
-**Depends on**: Phase 3 (infrastructure), Phase 4 (multi-container), Phase 5 (Samba AD)
-**Requirements**: PILOT-01, PILOT-02, PILOT-03, PILOT-04
-**Success Criteria** (what must be TRUE):
-  1. PR opened in htm-gestor-documentos creates namespace with all components
-  2. Frontend, backend, Samba AD, PostgreSQL, and MinIO all start successfully
-  3. PR closed/merged triggers namespace cleanup
-  4. Edge team has documentation to operate and troubleshoot environments
-**Plans**: TBD
-
-Plans:
-- [ ] 06-01: Pilot project configuration and validation (PILOT-01, PILOT-02, PILOT-03, PILOT-04)
+### ~~Samba AD Chart~~ — Discarded
+**Rationale**: Mock authentication (AUTH_BYPASS_LDAP) is sufficient for preview environments. The complexity of running a privileged Samba AD container in Kubernetes is not justified for ephemeral environments.
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Platform Fixes & x86 Support | M1 | 2/2 | **~Done** (PLAT-02 partial, acceptable for pilot) | 2026-03-14 |
 | 2. ECR Registry Integration | M1 | 1/1 | **Done** | 2026-03-14 |
 | 3. Infrastructure Setup | M1 | 2/2 | **Done** | 2026-03-14 |
-| 4. Multi-Container Support | M2 | 0/1 | Not started | - |
-| 5. Samba AD Chart | M2 | 0/1 | Not started | - |
-| 6. Pilot Project Integration | M2 | 0/1 | Not started | - |
+| 4. Pilot Project Integration | M2 | 0/1 | Not started | - |
+
+**Removed phases:**
+- ~~Phase 4 (Multi-Container Support)~~ → Deferred to main project roadmap (see Future Roadmap above)
+- ~~Phase 5 (Samba AD Chart)~~ → Discarded (mock auth chosen)
+- Phase 6 renumbered to Phase 4
 
 ---
 *Roadmap created: 2026-01-25*
-*Last updated: 2026-03-14 — Phase 2 completed (ECR registry integration), Phase 3 completed (EC2 cluster fully operational)*
-*Coverage: 30/30 requirements mapped*
+*Last updated: 2026-03-14 — Mock auth + combined image decided; Phases 4-5 removed; Phase 6 renumbered to Phase 4*
+*Coverage: 21 active requirements mapped + 5 deferred (MULTI) + 5 discarded (AD)*

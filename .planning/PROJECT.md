@@ -6,7 +6,7 @@ Platform adaptation and deployment of k8s-ephemeral-environments for Edge/UFAL, 
 
 ## Core Value
 
-Enable the htm-gestor-documentos team to open a PR and get a fully functional preview environment (frontend + backend + Samba AD + PostgreSQL + MinIO) with a public URL in under 10 minutes.
+Enable the htm-gestor-documentos team to open a PR and get a fully functional preview environment (frontend + backend + PostgreSQL + MinIO) with a public URL in under 10 minutes.
 
 ## Requirements
 
@@ -36,12 +36,7 @@ Enable the htm-gestor-documentos team to open a PR and get a fully functional pr
 - [ ] **X86-01**: Build pipeline targets `linux/amd64` architecture
 - [ ] **X86-02**: All base images verified for x86 compatibility
 - [ ] **X86-03**: Tool binaries (kubectl, helm) default to amd64
-- [ ] **MULTI-01**: k8s-ee-app chart supports multiple containers per pod
-- [ ] **MULTI-02**: k8s-ee.yaml schema extended for container array
-- [ ] **MULTI-03**: Frontend and backend containers share pod networking
-- [ ] **AD-01**: Samba AD Helm chart created
-- [ ] **AD-02**: Samba AD integrates with k8s-ee.yaml configuration
-- [ ] **AD-03**: LDAP credentials stored in Kubernetes Secret
+- [ ] **EDGE-00**: Mock authentication enabled (AUTH_BYPASS_LDAP + seeded test users)
 - [ ] **ECR-01**: build-image action supports AWS ECR push
 - [ ] **ECR-02**: OIDC configured for GitHub Actions → AWS authentication
 - [ ] **ECR-03**: Workflow handles ECR registry login and push
@@ -52,14 +47,23 @@ Enable the htm-gestor-documentos team to open a PR and get a fully functional pr
 - [ ] **EDGE-05**: k3s installed on AWS EC2 (x86)
 - [ ] **EDGE-06**: Operators deployed (CloudNativePG, MinIO)
 - [ ] **EDGE-07**: Observability stack deployed
-- [ ] **EDGE-08**: htm-gestor-documentos configured with k8s-ee.yaml
+- [ ] **EDGE-08**: htm-gestor-documentos configured with k8s-ee.yaml (combined image + mock auth)
 - [ ] **EDGE-09**: End-to-end PR lifecycle validated
+
+### Deferred
+
+<!-- Deferred to main project roadmap -->
+
+- [ ] **MULTI-01**: k8s-ee-app chart supports multiple containers per pod
+- [ ] **MULTI-02**: k8s-ee.yaml schema extended for container array
+- [ ] **MULTI-03**: Frontend and backend containers share pod networking
 
 ### Out of Scope
 
 <!-- Explicit boundaries -->
 
 - EKS migration — deferred to post-pilot if successful
+- Samba AD chart — discarded; mock authentication sufficient for pilot
 - MariaDB support fixes — client uses PostgreSQL only
 - MongoDB chart — not needed for this project
 - Redis chart — not needed for this project
@@ -94,7 +98,7 @@ Enable the htm-gestor-documentos team to open a PR and get a fully functional pr
 | **Database** | PostgreSQL 17 with Prisma ORM |
 | **Storage** | MinIO for documents |
 | **Auth** | Samba AD (LDAP) |
-| **Deployment** | Multi-container pod (frontend + backend + AD) |
+| **Deployment** | Combined single image (frontend + backend) |
 
 ### Platform Concerns to Address
 
@@ -129,11 +133,14 @@ Detailed migration plan exists at `docs/edge-migration-plan.md` with:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| VPS (k3s) over EKS for pilot | Faster setup (1-2 days vs 5), lower cost (~R$ 1,212 vs R$ 2,200+), proven architecture | — Pending |
-| ECR over GHCR | Client already uses ECR, lower latency, no imagePullSecrets needed | — Pending |
-| Multi-container pod (not separate deployments) | Matches client's existing deployment pattern, simpler networking | — Pending |
-| PostgreSQL only (no MariaDB) | Client doesn't need MariaDB, avoids data loss bug | — Pending |
-| Skip Phase 2.5 features | Pilot needs existing functionality, not new features | — Pending |
+| VPS (k3s) over EKS for pilot | Faster setup (1-2 days vs 5), lower cost (~R$ 1,212 vs R$ 2,200+), proven architecture | Decided |
+| ECR over GHCR | Client already uses ECR, repo is private, GHCR not viable | Decided |
+| Combined single image (not multi-container) | Works today without Phase 4, simpler resource management | Decided |
+| Mock auth (not real Samba AD) | Faster to implement, no privileged container needed, sufficient for preview | Decided |
+| Multi-container support deferred | Not needed for pilot; added to main project roadmap for future | Decided |
+| Samba AD chart discarded | Mock auth chosen; Samba AD chart not worth the complexity for pilot | Decided |
+| PostgreSQL only (no MariaDB) | Client doesn't need MariaDB, avoids data loss bug | Decided |
+| Skip Phase 2.5 features | Pilot needs existing functionality, not new features | Decided |
 
 ---
-*Last updated: 2026-01-25 after initialization*
+*Last updated: 2026-03-14 — Decided: mock auth + combined image; Samba AD discarded; multi-container deferred to main roadmap*

@@ -68,7 +68,13 @@ This roadmap outlines the evolution of K8s Ephemeral Environments from a single-
 - **US-058: Database Access Credentials** *(Should, 5 pts)*
   - Display database connection details in PR comment for DBeaver/TablePlus access
 
-**Key Outcome:** Developers can manage environments locally, reduce costs through automatic hibernation, track delivery performance with DORA metrics, and easily access databases with external tools.
+- **US-060: Multi-Container Pod Support** *(Should, 13 pts)*
+  - k8s-ee-app chart supports multiple containers per pod (main + sidecars)
+  - k8s-ee.yaml schema extended for containers configuration
+  - Shared volumes (emptyDir) and per-container resources/env vars
+  - Resource quota calculation updated for multiple containers
+
+**Key Outcome:** Developers can manage environments locally, reduce costs through automatic hibernation, track delivery performance with DORA metrics, easily access databases with external tools, and deploy complex multi-container applications.
 
 ---
 
@@ -262,8 +268,8 @@ Phase 2.5 (parallel) ──→ Phase 3 ──→ Phase 4
 **Future Development**
 
 *Phase 2.5 — Core Evolution*
-- Epics: 3 | Stories: 12 | Points: 94
-- Must: 1 | Should: 8 | Could: 2
+- Epics: 3 | Stories: 13 | Points: 107
+- Must: 1 | Should: 9 | Could: 2
 
 *Phase 3 — Cloud Scale*
 - Epics: 1 | Stories: 5 | Points: 55
@@ -274,8 +280,8 @@ Phase 2.5 (parallel) ──→ Phase 3 ──→ Phase 4
 - Must: 5 | Should: 3 | Could: 0
 
 **Totals**
-- Future: **6 epics, 25 stories, 246 points**
-- Overall: **14 epics, 59 stories, 432 points**
+- Future: **6 epics, 26 stories, 259 points**
+- Overall: **14 epics, 60 stories, 445 points**
 
 ---
 
@@ -291,6 +297,6 @@ For enterprise features or partnership inquiries, contact: **genes@genesluna.dev
 
 *This roadmap is a living document and will be updated as priorities evolve.*
 
-**Last Updated:** January 2026
+**Last Updated:** March 2026
 
 </div>

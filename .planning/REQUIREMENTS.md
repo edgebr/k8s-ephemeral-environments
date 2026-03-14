@@ -1,7 +1,7 @@
 # Requirements: Edge/UFAL Pilot Migration
 
 **Defined:** 2026-01-25
-**Core Value:** Enable htm-gestor-documentos team to get fully functional PR preview environments on AWS infrastructure
+**Core Value:** Enable htm-gestor-documentos team to get fully functional PR preview environments (combined image + mock auth) on AWS infrastructure
 
 ## Milestone 1: Platform Migration (Days 1-4)
 
@@ -35,9 +35,21 @@ Platform adaptation for x86/AWS/ECR and infrastructure deployment.
 - [x] **INFRA-06**: Operators deployed _(CloudNativePG, MongoDB Community Operator, MinIO Operator)_
 - [x] **INFRA-07**: Observability stack deployed _(Prometheus, Loki, Promtail, Grafana with GitHub OAuth)_
 
-## Milestone 2: Pilot Project Enablement (Days 5-8)
+## Milestone 2: Pilot Project Enablement (Days 5-6)
 
-Multi-container support, Samba AD, and htm-gestor-documentos integration.
+Combined image deployment with mock authentication for htm-gestor-documentos.
+
+### Pilot Project Integration
+
+- [ ] **PILOT-01**: htm-gestor-documentos k8s-ee.yaml created (combined image + mock auth)
+- [ ] **PILOT-02**: Dockerfile.k8s-ee created (multi-stage: backend + frontend → single image)
+- [ ] **PILOT-03**: PR workflow configured in htm-gestor-documentos repo
+- [ ] **PILOT-04**: End-to-end PR lifecycle validated (open → deploy → test → close → cleanup)
+- [ ] **PILOT-05**: Documentation provided to Edge team
+
+## Deferred to Main Project Roadmap
+
+Multi-container support is deferred — not needed for the pilot (combined image approach chosen).
 
 ### Multi-Container Support
 
@@ -47,27 +59,13 @@ Multi-container support, Samba AD, and htm-gestor-documentos integration.
 - [ ] **MULTI-04**: Per-container image, port, resources, and environment variables
 - [ ] **MULTI-05**: Resource quota calculation updated for multiple containers
 
-### Samba AD Chart
-
-- [ ] **AD-01**: Samba AD Helm chart created (StatefulSet pattern for stable identity)
-- [ ] **AD-02**: Samba AD integrates with k8s-ee.yaml configuration (databases.samba-ad)
-- [ ] **AD-03**: LDAP credentials stored in Kubernetes Secret (auto-generated)
-- [ ] **AD-04**: Namespace security policy configured for privileged container
-- [ ] **AD-05**: DNS integration documented (CoreDNS forwarding if needed)
-
-### Pilot Project Integration
-
-- [ ] **PILOT-01**: htm-gestor-documentos k8s-ee.yaml created (frontend + backend + AD)
-- [ ] **PILOT-02**: PR workflow configured in htm-gestor-documentos repo
-- [ ] **PILOT-03**: End-to-end PR lifecycle validated (open → deploy → test → close → cleanup)
-- [ ] **PILOT-04**: Documentation provided to Edge team
-
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
 | EKS migration | Deferred to post-pilot if successful |
 | MariaDB fixes | Client uses PostgreSQL only |
+| Samba AD chart | Discarded — mock auth chosen for pilot |
 | MongoDB, Redis | Not needed for htm-gestor-documentos |
 | Auto-hibernation | Phase 2.5 roadmap item |
 | Multi-provider (GitLab, Bitbucket) | Phase 2.5 roadmap item |
@@ -95,28 +93,27 @@ Multi-container support, Samba AD, and htm-gestor-documentos integration.
 | INFRA-05 | Phase 3 | **Done** (2026-03-05) |
 | INFRA-06 | Phase 3 | **Done** (2026-03-05) |
 | INFRA-07 | Phase 3 | **Done** (2026-03-05) |
-| MULTI-01 | Phase 4 | Pending |
-| MULTI-02 | Phase 4 | Pending |
-| MULTI-03 | Phase 4 | Pending |
-| MULTI-04 | Phase 4 | Pending |
-| MULTI-05 | Phase 4 | Pending |
-| AD-01 | Phase 5 | Pending |
-| AD-02 | Phase 5 | Pending |
-| AD-03 | Phase 5 | Pending |
-| AD-04 | Phase 5 | Pending |
-| AD-05 | Phase 5 | Pending |
-| PILOT-01 | Phase 6 | Pending |
-| PILOT-02 | Phase 6 | Pending |
-| PILOT-03 | Phase 6 | Pending |
-| PILOT-04 | Phase 6 | Pending |
+| PILOT-01 | Phase 4 | Pending |
+| PILOT-02 | Phase 4 | Pending |
+| PILOT-03 | Phase 4 | Pending |
+| PILOT-04 | Phase 4 | Pending |
+| PILOT-05 | Phase 4 | Pending |
+| MULTI-01 | Deferred | Deferred to main project roadmap |
+| MULTI-02 | Deferred | Deferred to main project roadmap |
+| MULTI-03 | Deferred | Deferred to main project roadmap |
+| MULTI-04 | Deferred | Deferred to main project roadmap |
+| MULTI-05 | Deferred | Deferred to main project roadmap |
+| AD-01–05 | — | **Discarded** (Samba AD chart not needed) |
 
 **Coverage:**
 - Milestone 1 requirements: 16 total (Phases 1-3)
-- Milestone 2 requirements: 14 total (Phases 4-6)
-- Total: 30 requirements
-- Mapped to phases: 30
+- Milestone 2 requirements: 5 total (Phase 4 — Pilot Integration)
+- Deferred: 5 (MULTI-01–05 → main project roadmap)
+- Discarded: 5 (AD-01–05 — Samba AD chart)
+- Total active: 21 requirements
+- Mapped to phases: 21
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-25*
-*Last updated: 2026-03-14 — Phase 1 nearly complete (only PLAT-02 partial), Phase 2 done, Phase 3 done*
+*Last updated: 2026-03-14 — Mock auth + combined image decided; Samba AD discarded; multi-container deferred to main roadmap; Phases 4-5 removed, Phase 6 renumbered to Phase 4*
