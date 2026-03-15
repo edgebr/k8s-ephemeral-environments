@@ -6,69 +6,69 @@
 
 | Phase | Step | Description | Status | Commit |
 |-------|------|-------------|--------|--------|
-| **Phase 1** | Step 1 | Install prom-client | NOT STARTED | — |
-| | Step 2 | Create MetricsService | NOT STARTED | — |
-| **Phase 2** | Step 3 | Create HTTP metrics middleware | NOT STARTED | — |
-| **Phase 3** | Step 4 | Create Prisma metrics extension | NOT STARTED | — |
-| | Step 5 | Wire extension into Prisma chain | NOT STARTED | — |
-| | Step 6 | Create pool metrics collector | NOT STARTED | — |
-| **Phase 4** | Step 7 | Create metrics feature (vertical slice) + wire into app | NOT STARTED | — |
-| **Phase 5** | Step 8 | Config Reference (docs) | NOT STARTED | — |
-| | Step 9 | Config Reference (wiki) | NOT STARTED | — |
-| | Step 10 | Grafana Dashboards (wiki) | NOT STARTED | — |
-| | Step 11 | Onboarding Guide (docs) | NOT STARTED | — |
+| **Phase 1** | Step 1 | Install prom-client | DONE | ef59c7857 |
+| | Step 2 | Create MetricsService | DONE | 4924b74d4 |
+| **Phase 2** | Step 3 | Create HTTP metrics middleware | DONE | f20936ee0 |
+| **Phase 3** | Step 4 | Create Prisma metrics extension | DONE | 9abea29d0 |
+| | Step 5 | Wire extension into Prisma chain | DONE | 9ecc27f59 |
+| | Step 6 | Create pool metrics collector | DONE | 796d3e918 |
+| **Phase 4** | Step 7 | Create metrics feature (vertical slice) + wire into app | DONE | e44547fc7 |
+| **Phase 5** | Step 8 | Config Reference (docs) | DONE | f53a3bd |
+| | Step 9 | Config Reference (wiki) | DONE | f737374 |
+| | Step 10 | Grafana Dashboards (wiki) | DONE | f737374 |
+| | Step 11 | Onboarding Guide (docs) | DONE | f53a3bd |
 
 ## Phase Acceptance Criteria
 
 ### Phase 1: Core Metrics Infrastructure
-- [ ] `prom-client` installed and importable
-- [ ] All 6 metrics defined matching the Grafana dashboard PromQL contract
-- [ ] `getMetrics()` returns valid Prometheus text format output
-- [ ] Unit tests for MetricsService pass
-- [ ] Code reviewed by `code-reviewer` agent
-- [ ] Committed
+- [x] `prom-client` installed and importable
+- [x] All 6 metrics defined matching the Grafana dashboard PromQL contract
+- [x] `getMetrics()` returns valid Prometheus text format output
+- [x] Unit tests for MetricsService pass
+- [x] Code reviewed by `code-reviewer` agent
+- [x] Committed
 
 ### Phase 2: HTTP Metrics
-- [ ] HTTP metrics middleware created and tested
-- [ ] Path normalization prevents label explosion (UUIDs, numeric IDs)
-- [ ] `/metrics` and `/assets/*` excluded from tracking
-- [ ] All unit tests pass
-- [ ] Code reviewed by `code-reviewer` agent
-- [ ] Committed
+- [x] HTTP metrics middleware created and tested
+- [x] Path normalization prevents label explosion (UUIDs, numeric IDs)
+- [x] `/metrics` and `/assets/*` excluded from tracking
+- [x] All unit tests pass
+- [x] Code reviewed by `code-reviewer` agent
+- [x] Committed
 
 ### Phase 3: Database Metrics
-- [ ] Every Prisma query records duration with operation and success labels
-- [ ] Pool gauges updated periodically from `pg_stat_activity`
-- [ ] `basePrisma` exported for pool collector use
-- [ ] Both `prisma` and `prismaUnfiltered` wrapped with metrics extension
-- [ ] All unit tests pass (extension + pool collector)
-- [ ] Code reviewed by `code-reviewer` agent
-- [ ] Committed
+- [x] Every Prisma query records duration with operation and success labels
+- [x] Pool gauges updated periodically from `pg_stat_activity`
+- [x] `basePrisma` exported for pool collector use
+- [x] Both `prisma` and `prismaUnfiltered` wrapped with metrics extension
+- [x] All unit tests pass (extension + pool collector)
+- [x] Code reviewed by `code-reviewer` agent
+- [x] Committed
 
 ### Phase 4: Integration
-- [ ] `GET /metrics` returns valid Prometheus text format
-- [ ] `/metrics` endpoint responds independently of CORS and `/api` content-type middleware
-- [ ] HTTP metrics middleware captures all API requests
-- [ ] Pool collector starts on server boot and interval cleared on shutdown
-- [ ] App starts normally — no regressions to existing functionality
-- [ ] All existing tests still pass (`npm test`)
-- [ ] Code reviewed by `code-reviewer` agent
-- [ ] Committed
+- [x] `GET /metrics` returns valid Prometheus text format
+- [x] `/metrics` endpoint responds independently of CORS and `/api` content-type middleware
+- [x] HTTP metrics middleware captures all API requests
+- [x] Pool collector starts on server boot and interval cleared on shutdown
+- [x] App starts normally — no regressions to existing functionality
+- [x] All existing tests still pass (`npm test`)
+- [x] Code reviewed by `code-reviewer` agent
+- [x] Committed
 
 ### Phase 5: Documentation
-- [ ] Config reference (docs + wiki) documents required metrics, labels, and example code
-- [ ] Grafana Dashboards wiki documents panel-to-metric mapping and troubleshooting
-- [ ] Onboarding guide warns about metrics requirements when `metrics.enabled: true`
-- [ ] Demo-app referenced as canonical implementation example
-- [ ] Code reviewed by `code-reviewer` agent
-- [ ] Committed
+- [x] Config reference (docs + wiki) documents required metrics, labels, and example code
+- [x] Grafana Dashboards wiki documents panel-to-metric mapping and troubleshooting
+- [x] Onboarding guide warns about metrics requirements when `metrics.enabled: true`
+- [x] Demo-app referenced as canonical implementation example
+- [x] Code reviewed by `code-reviewer` agent
+- [x] Committed
 
 ## Verification Checklist (after all phases complete)
 
-- [ ] `curl -s http://localhost:3000/metrics` returns Prometheus text format
-- [ ] `http_requests_total` increments on API requests
-- [ ] `/metrics` itself is NOT counted in `http_requests_total`
-- [ ] `db_pool_connections_total` > 0
-- [ ] `db_query_duration_seconds` has observations after DB-hitting requests
-- [ ] All tests pass (`npm test`)
-- [ ] Grafana dashboard shows App Status = UP, DB Connected = YES
+- [x] `curl -s http://localhost:3000/metrics` returns Prometheus text format
+- [x] `http_requests_total` increments on API requests
+- [x] `/metrics` itself is NOT counted in `http_requests_total`
+- [x] `db_pool_connections_total` > 0
+- [x] `db_query_duration_seconds` has observations after DB-hitting requests
+- [x] All tests pass (`npm test`)
+- [x] Grafana dashboard shows App Status = UP, DB Connected = YES
