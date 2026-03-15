@@ -17,6 +17,9 @@ This guide helps diagnose and resolve common issues with PR environments.
 - [Migration Issues](#migration-issues)
 - [Network Policy Issues](#network-policy-issues)
 - [Health Check Failures](#health-check-failures)
+- [Application Issues](#application-issues)
+  - [CORS Errors on Preview URL](#cors-errors-on-preview-url)
+  - [File System Permission Errors](#file-system-permission-errors)
 - [Common kubectl Commands](#common-kubectl-commands)
 - [Metrics Issues](#metrics-issues)
 - [Observability Startup Issues](#observability-startup-issues)
@@ -1063,6 +1066,56 @@ kubectl get endpoints -n k8s-ee-pr-{number}
 # Check readiness status
 kubectl get pods -n k8s-ee-pr-{number} -o wide
 ```
+
+## Application Issues
+
+### CORS Errors on Preview URL
+
+**Symptoms:**
+- Frontend loads but API calls fail
+- Browser console shows `CORS policy` errors
+- App logs show "CORS not allowed" or similar messages
+
+**Root Cause:**
+The preview URL (`https://{projectId}-pr-{N}.{domain}`) is a new origin not present in your application's CORS allowlist.
+
+**Resolution:**
+Add the platform-injected `PREVIEW_URL` environment variable to your CORS allowed origins:
+
+```javascript
+// Express.js example
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'https://myapp-staging.example.com',
+  process.env.PREVIEW_URL,  // k8s-ee preview domain
+].filter(Boolean);
+```
+
+The `PREVIEW_URL` variable is automatically set by the platform for every PR environment (e.g., `https://myapp-pr-42.k8s-ee.genesluna.dev`). Using `filter(Boolean)` ensures it's safely ignored when the variable is not set (e.g., in local development).
+
+See [Platform-Injected Environment Variables](./k8s-ee-config-reference.md#platform-injected-environment-variables) for all auto-injected variables.
+
+### File System Permission Errors
+
+**Symptoms:**
+- Pod crashes with `ENOENT: no such file or directory, mkdir 'some-dir/'`
+- `EACCES: permission denied` errors at startup
+
+**Root Cause:**
+The app runs as a non-root user (`node`, UID 1000) and cannot create directories in the image filesystem at runtime.
+
+**Resolution:**
+Pre-create required directories in your Dockerfile before switching to the non-root user:
+
+```dockerfile
+# Create directories the app needs at runtime
+RUN mkdir -p /app/upload && chown node:node /app/upload
+
+USER node
+```
+
+---
 
 ## Common kubectl Commands
 

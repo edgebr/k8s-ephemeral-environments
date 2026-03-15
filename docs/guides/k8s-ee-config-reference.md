@@ -703,6 +703,31 @@ These values are automatically computed and added to the configuration:
 
 ---
 
+## Platform-Injected Environment Variables
+
+In addition to user-defined `env` values, the platform automatically injects these environment variables into every app pod:
+
+| Variable | Source | Example |
+|----------|--------|---------|
+| `PORT` | `app.port` config | `3000` |
+| `PR_NUMBER` | Workflow input | `42` |
+| `COMMIT_SHA` | Git HEAD SHA | `a1b2c3d4...` |
+| `BRANCH_NAME` | PR head branch | `feat-my-feature` |
+| `APP_VERSION` | Image tag | `pr-42` |
+| `PREVIEW_URL` | Computed preview URL | `https://myapp-pr-42.k8s-ee.genesluna.dev` |
+
+Database charts inject additional variables when databases are enabled (e.g., `DATABASE_URL`, `PGHOST`, `MINIO_ENDPOINT`).
+
+> **CORS tip:** If your application has a CORS allowlist, add `process.env.PREVIEW_URL` to it so the frontend served from the preview domain can make API calls. Example (Express.js):
+> ```javascript
+> const allowedOrigins = [
+>   'http://localhost:3000',
+>   process.env.PREVIEW_URL,  // k8s-ee preview domain
+> ].filter(Boolean);
+> ```
+
+---
+
 ## See Also
 
 - [Onboarding New Repository](./onboarding-new-repo.md) - Getting started guide

@@ -251,6 +251,8 @@ These are injected into the pod via a Kubernetes ConfigMap. All values must be s
 
 > **Database variables are automatic:** Connection details like `DATABASE_URL`, `PGHOST`, `MINIO_ENDPOINT`, etc. are injected by the database charts when you enable databases. You do not need to add them to `env`.
 
+> **CORS:** The platform injects `PREVIEW_URL` as an environment variable (e.g., `https://myapp-pr-42.k8s-ee.genesluna.dev`). If your app has a CORS allowlist, add `process.env.PREVIEW_URL` to it. See [CORS troubleshooting](./troubleshooting.md#cors-errors-on-preview-url).
+
 See the [full env reference](./k8s-ee-config-reference.md#env) for details.
 
 ---
