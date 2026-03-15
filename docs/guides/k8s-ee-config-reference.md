@@ -341,6 +341,26 @@ envFrom:
 
 ---
 
+### writableDirs
+
+Directories that need to be writable at runtime. Each directory is mounted as an `emptyDir` volume. Required because containers run with `readOnlyRootFilesystem: true` for security.
+
+| Property | Value |
+|----------|-------|
+| Type | array of strings |
+| Default | [] |
+| Path Pattern | Must start with `/` |
+
+```yaml
+writableDirs:
+  - /app/upload
+  - /app/data
+```
+
+> **Note:** `/tmp` is always writable (mounted automatically). Only declare directories outside of `/tmp` that your app needs to write to.
+
+---
+
 ### databases
 
 Database configuration. All databases are disabled by default (opt-in).
