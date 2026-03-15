@@ -14,6 +14,8 @@ Custom Grafana dashboards for monitoring PR ephemeral environments and platform 
 | [PR Lifecycle](#pr-lifecycle) | `pr-lifecycle` | Environment lifecycle tracking | Monitor cleanup jobs, preserved envs |
 | [Resource Allocation](#resource-allocation) | `resource-allocation` | Capacity planning | Track quota usage, top consumers |
 | [SLO Dashboard](#slo-dashboard) | `slo-dashboard` | Service Level Objectives | Track availability, latency SLOs |
+| [htm-gestor-docs PR Deep Dive](#htm-gestor-docs-pr-deep-dive) | `htm-gestor-docs-pr` | Prisma, Node.js, API deep dive | Developer debugging pilot project |
+| [htm-gestor-docs QA Testing](#htm-gestor-docs-qa-testing) | `htm-gestor-docs-qa` | Functional health, errors, request flow | QA testing pilot project |
 
 ---
 
@@ -231,6 +233,72 @@ Custom Grafana dashboards for monitoring PR ephemeral environments and platform 
 
 ---
 
+### htm-gestor-docs PR Deep Dive
+
+- **UID:** `htm-gestor-docs-pr`
+- **Purpose:** Developer deep dive into Prisma, Node.js runtime, and API performance for htm-gestor-documentos PR environments
+- **Tags:** `k8s-ee`, `ephemeral`, `htm-gestor-docs`, `developer`
+- **Variable:** `namespace` - Pre-filtered to `htm-gestor-docs-pr-*` environments only
+
+**Panels:**
+
+| Row | Panels |
+|-----|--------|
+| Quick Status | App Status, Error Rate, P95 Latency, Request Rate, Query Rate, Pool Saturation |
+| Prisma Operations Deep Dive | Operation Latency (P50/P95/P99), Query Rate by Operation, Failed Queries, Read vs Write Ratio, Slowest Operations |
+| Connection Pool Deep Dive | Pool Utilization (stacked), Pool Saturation Over Time |
+| Node.js Runtime | Heap Memory, Event Loop Lag, GC Pause Duration, CPU Usage, Active Handles & Requests, Resident Memory vs Heap |
+| API Performance by Route | Top Routes by Volume, Latency by Route (P50/P95/P99), Error Rate by Route, Slowest Routes |
+
+**Key Features:**
+- Prisma operation-level query latency with P50/P95/P99 percentiles
+- Read vs write ratio donut chart for understanding query patterns
+- Connection pool saturation monitoring with threshold alerts
+- Node.js heap, GC, and event loop visibility
+- API route-level performance breakdown
+- Links to QA Dashboard, PR Developer Insights, PR Environment Overview
+
+**Best For:**
+- Developers debugging Prisma query performance issues
+- Investigating Node.js memory leaks or GC pressure
+- API route-level latency analysis
+- Connection pool capacity planning
+
+---
+
+### htm-gestor-docs QA Testing
+
+- **UID:** `htm-gestor-docs-qa`
+- **Purpose:** QA-focused functional health, error analysis, and regression detection for htm-gestor-documentos PR environments
+- **Tags:** `k8s-ee`, `ephemeral`, `htm-gestor-docs`, `qa`
+- **Variable:** `namespace` - Pre-filtered to `htm-gestor-docs-pr-*` environments only
+
+**Panels:**
+
+| Row | Panels |
+|-----|--------|
+| Environment Health | App Status, Error Rate, P95 Latency, Total Requests (1h), DB Connected, Pods Running |
+| Error Analysis | Error Rate Trend, Recent Error Logs, 5xx Errors by Endpoint, 4xx Errors by Endpoint |
+| Request Flow | Requests by Status Code, Status Code Distribution, Request Volume by Route, Request Rate by Method, All Requests Log |
+| Performance & Regression Signals | Response Time Trend (P50/P95/P99), Slowest Endpoints, Error Rate by Route, P95 per Endpoint Over Time, DB Query Success Rate |
+
+**Key Features:**
+- Environment health at a glance (app up, DB connected, pods running)
+- Error logs pre-filtered from Loki for quick issue identification
+- Status code distribution piecharts for visual health overview
+- HTTP method distribution to understand request patterns
+- Unfiltered log stream for tracing test actions
+- Performance regression detection with threshold lines
+- Links to Developer Deep Dive, PR Developer Insights, PR Environment Overview
+
+**Best For:**
+- QA testers verifying PR environment functionality
+- Quick identification of errors caused by test actions
+- Performance regression detection across test cycles
+- Monitoring request flow during manual testing
+
+---
+
 ## Deployment
 
 > **See [Grafana Dashboards Runbook](../../../docs/runbooks/grafana-dashboards.md) for step-by-step operational instructions.**
@@ -283,6 +351,8 @@ kubectl logs -n observability -l app.kubernetes.io/name=grafana -c grafana-sc-da
 - https://grafana.k8s-ee.genesluna.dev/d/pr-lifecycle
 - https://grafana.k8s-ee.genesluna.dev/d/resource-allocation
 - https://grafana.k8s-ee.genesluna.dev/d/slo-dashboard
+- https://grafana.k8s-ee.genesluna.dev/d/htm-gestor-docs-pr
+- https://grafana.k8s-ee.genesluna.dev/d/htm-gestor-docs-qa
 
 ---
 
@@ -407,6 +477,8 @@ Add your dashboard to the ConfigMap and apply (see [Deployment](#deployment) sec
 | PR Lifecycle | kube-state-metrics, CronJob metrics |
 | Resource Allocation | kube-state-metrics, cAdvisor, node-exporter |
 | SLO Dashboard | demo-app metrics, probe metrics |
+| htm-gestor-docs PR Deep Dive | prom-client metrics, kube-state-metrics, collectDefaultMetrics (Node.js runtime) |
+| htm-gestor-docs QA Testing | prom-client metrics, kube-state-metrics, Loki |
 
 ### Key Metrics
 
