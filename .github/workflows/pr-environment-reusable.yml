@@ -114,6 +114,8 @@ concurrency:
   group: pr-env-${{ inputs.repository }}-${{ inputs.pr-number || inputs.issue-number }}
   cancel-in-progress: false
 
+# All jobs run on arc-runner-set (self-hosted) to avoid GitHub-hosted runner billing.
+#
 # Checkout Strategy:
 # - Jobs that need BOTH calling repo and k8s-ee actions (validate-config, build-image):
 #   Checkout calling repo to root, k8s-ee to _k8s-ee/ path, use ./_k8s-ee/.github/actions/
@@ -123,12 +125,12 @@ concurrency:
 jobs:
   # ============================================================================
   # VALIDATE CONFIG
-  # Runs on: ubuntu-latest (lightweight, fast startup)
+  # Runs on: arc-runner-set (self-hosted)
   # Purpose: Parse and validate k8s-ee.yaml, extract config for downstream jobs
   # ============================================================================
   validate-config:
     name: Validate Config
-    runs-on: ubuntu-latest
+    runs-on: arc-runner-set
     timeout-minutes: 3
 
     permissions:
@@ -278,13 +280,13 @@ jobs:
 
   # ============================================================================
   # RESOLVE ACTION
-  # Runs on: ubuntu-latest
+  # Runs on: arc-runner-set (self-hosted)
   # Purpose: Map (trigger mode, event context) to action
   # ============================================================================
   resolve-action:
     name: Resolve Action
     needs: validate-config
-    runs-on: ubuntu-latest
+    runs-on: arc-runner-set
     timeout-minutes: 2
 
     outputs:
@@ -464,7 +466,7 @@ jobs:
 
   # ============================================================================
   # BUILD IMAGE
-  # Runs on: ubuntu-latest (has Docker, GHCR access)
+  # Runs on: arc-runner-set (self-hosted)
   # Condition: action is deploy or check-redeploy with existing namespace
   # Depends on: validate-config, resolve-action, check-namespace
   # ============================================================================
@@ -476,7 +478,7 @@ jobs:
       (needs.resolve-action.outputs.action == 'deploy' ||
        (needs.resolve-action.outputs.action == 'check-redeploy' && needs.check-namespace.outputs.exists == 'true'))
     needs: [validate-config, resolve-action, check-namespace]
-    runs-on: ubuntu-latest
+    runs-on: arc-runner-set
     timeout-minutes: 15
 
     permissions:
@@ -613,7 +615,7 @@ jobs:
 
   # ============================================================================
   # PR COMMENT (DEPLOY)
-  # Runs on: ubuntu-latest
+  # Runs on: arc-runner-set (self-hosted)
   # Condition: Always after deploy-app (success or failure), when action was deploy
   # Posts deployment status to PR
   # ============================================================================
@@ -625,7 +627,7 @@ jobs:
       (needs.resolve-action.outputs.action == 'deploy' ||
        (needs.resolve-action.outputs.action == 'check-redeploy' && needs.check-namespace.outputs.exists == 'true'))
     needs: [validate-config, resolve-action, check-namespace, build-image, deploy-app]
-    runs-on: ubuntu-latest
+    runs-on: arc-runner-set
     timeout-minutes: 2
 
     permissions:
@@ -728,7 +730,7 @@ jobs:
 
   # ============================================================================
   # PR COMMENT (DESTROY)
-  # Runs on: ubuntu-latest
+  # Runs on: arc-runner-set (self-hosted)
   # Condition: Always after destroy-namespace, when action was destroy
   # Posts destroy/preserved status to PR
   # ============================================================================
@@ -736,7 +738,7 @@ jobs:
     name: PR Comment (Destroy)
     if: always() && needs.resolve-action.outputs.action == 'destroy' && needs.validate-config.result == 'success'
     needs: [validate-config, resolve-action, destroy-namespace]
-    runs-on: ubuntu-latest
+    runs-on: arc-runner-set
     timeout-minutes: 2
 
     permissions:
