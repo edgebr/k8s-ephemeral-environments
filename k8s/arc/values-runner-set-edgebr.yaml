@@ -3,6 +3,12 @@ githubConfigSecret: github-app-secret-edgebr
 runnerScaleSetName: "arc-runner-set"
 minRunners: 0
 maxRunners: 3
+
+# Enable Docker-in-Docker so runner pods can build container images.
+# Adds a dind sidecar with a Docker daemon the runner connects to.
+containerMode:
+  type: "dind"
+
 template:
   spec:
     serviceAccountName: arc-runner-sa

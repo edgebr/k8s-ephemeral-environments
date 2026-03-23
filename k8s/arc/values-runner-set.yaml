@@ -12,6 +12,11 @@ githubConfigSecret: github-app-secret
 minRunners: 0
 maxRunners: 3
 
+# Enable Docker-in-Docker so runner pods can build container images.
+# Adds a dind sidecar with a Docker daemon the runner connects to.
+containerMode:
+  type: "dind"
+
 # Runner pod template
 # IMPORTANT: Only set serviceAccountName here. Do NOT override container spec
 # (image, command, resources, volumeMounts) as this breaks JIT config injection.
