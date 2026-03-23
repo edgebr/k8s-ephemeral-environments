@@ -179,8 +179,37 @@ runs:
 
         echo "Input validation passed"
 
-    # NOTE: This step requires AWS CLI v2 pre-installed on the runner.
-    # GitHub-hosted ubuntu-latest has it; if reusing on self-hosted runners, ensure AWS CLI is available.
+    - name: Install CLI tools
+      shell: bash
+      env:
+        REGISTRY_TYPE: ${{ inputs.registry-type }}
+      run: |
+        set -euo pipefail
+
+        # Install gh CLI (needed for GHCR package visibility)
+        if ! command -v gh &> /dev/null; then
+          echo "Installing gh CLI..."
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+            | sudo tee /usr/share/keyrings/githubcli-archive-keyring.gpg > /dev/null
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+            | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq gh
+          echo "gh installed: $(gh --version | head -1)"
+        else
+          echo "gh already installed: $(gh --version | head -1)"
+        fi
+
+        # Install AWS CLI (needed for ECR registry resolution)
+        if [[ "$REGISTRY_TYPE" == "ecr" ]] && ! command -v aws &> /dev/null; then
+          echo "Installing AWS CLI..."
+          ARCH=$(uname -m)
+          curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip" -o /tmp/awscliv2.zip
+          unzip -q /tmp/awscliv2.zip -d /tmp
+          sudo /tmp/aws/install
+          rm -rf /tmp/awscliv2.zip /tmp/aws
+          echo "AWS CLI installed: $(aws --version)"
+        fi
+
     - name: Resolve registry
       id: resolve-registry
       shell: bash
