@@ -12,6 +12,8 @@ containerMode:
 template:
   spec:
     serviceAccountName: arc-runner-sa
+# Deploy to dedicated namespace (arc-runners-edgebr) to avoid Helm resource
+# conflicts with the koder-cat runner set in arc-runners.
 controllerServiceAccount:
   namespace: arc-systems
   name: arc-controller
