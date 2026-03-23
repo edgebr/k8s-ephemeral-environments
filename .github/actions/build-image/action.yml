@@ -378,7 +378,7 @@ runs:
 
         # Pin Trivy version to avoid GitHub API rate-limit / 403 errors when
         # resolving the latest release at build time.
-        TRIVY_TAG="v0.61.0"
+        TRIVY_TAG="v0.69.3"
         TRIVY_VERSION="${TRIVY_TAG#v}"
 
         # Construct direct CDN download URLs from the version tag.
