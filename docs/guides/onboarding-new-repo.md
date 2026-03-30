@@ -454,17 +454,13 @@ No GHCR package visibility settings or long-lived access keys are needed — ECR
 
 ### Migrating from Access Keys to OIDC
 
-If your repository was previously using ECR with org secrets (`ECR_AWS_ACCESS_KEY_ID`/`ECR_AWS_SECRET_ACCESS_KEY`), update your caller workflow:
+If your repository was previously using ECR with org secrets (`ECR_AWS_ACCESS_KEY_ID`/`ECR_AWS_SECRET_ACCESS_KEY`), update your setup:
 
-1. **Add `id-token: write`** to the `permissions:` block (required for all callers, even GHCR-only)
-2. **Add `ecr-role-to-assume`** to the `with:` block:
-   ```yaml
-   ecr-role-to-assume: ${{ vars.ECR_ROLE_TO_ASSUME || '' }}
-   ```
-3. **Set the `ECR_ROLE_TO_ASSUME` repository variable** with your IAM role ARN
-4. **Remove `ECR_AWS_ACCESS_KEY_ID`/`ECR_AWS_SECRET_ACCESS_KEY` org secrets** (after verifying OIDC works)
+1. **Add `id-token: write`** to the caller workflow's `permissions:` block (required for all callers, even GHCR-only)
+2. **Set the `ECR_ROLE_TO_ASSUME` repository variable** (or org-level variable) with your IAM role ARN
+3. **Remove `ECR_AWS_ACCESS_KEY_ID`/`ECR_AWS_SECRET_ACCESS_KEY` org secrets** (after verifying OIDC works)
 
-> **Important:** The `ecr-role-to-assume` input must be explicitly passed in your caller workflow's `with:` block. The reusable workflow defaults to an empty string, so omitting it will cause the build to fail with a validation error.
+> **Note:** The reusable workflow automatically reads `ECR_ROLE_TO_ASSUME` from the caller's repository variables, so you do **not** need to pass `ecr-role-to-assume` in the `with:` block. Passing it explicitly as an input is optional and takes precedence over the variable.
 
 ---
 

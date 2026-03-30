@@ -521,7 +521,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           platforms: ${{ inputs.platforms }}
           registry-type: ${{ inputs.registry-type }}
-          ecr-role-to-assume: ${{ inputs.ecr-role-to-assume }}
+          ecr-role-to-assume: ${{ inputs.ecr-role-to-assume || vars.ECR_ROLE_TO_ASSUME || '' }}
           ecr-region: ${{ inputs.ecr-region }}
 
   # ============================================================================
@@ -606,7 +606,7 @@ jobs:
           writable-dirs-json: ${{ needs.validate-config.outputs.writable-dirs-json }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           registry-type: ${{ inputs.registry-type }}
-          ecr-role-to-assume: ${{ inputs.ecr-role-to-assume }}
+          ecr-role-to-assume: ${{ inputs.ecr-role-to-assume || vars.ECR_ROLE_TO_ASSUME || '' }}
           ecr-region: ${{ inputs.ecr-region }}
           ecr-registry-url: ${{ needs.build-image.outputs.registry-url }}
 
