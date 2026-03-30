@@ -25,6 +25,7 @@ permissions:
   packages: write
   pull-requests: write
   security-events: write
+  id-token: write
 
 jobs:
   pr-environment:
@@ -51,4 +52,5 @@ jobs:
       architecture: ${{ vars.ARCHITECTURE || 'arm64' }}
       registry-type: ${{ vars.REGISTRY_TYPE || 'ghcr' }}
       ecr-region: ${{ vars.ECR_REGION || '' }}
+      ecr-role-to-assume: ${{ vars.ECR_ROLE_TO_ASSUME || '' }}
     secrets: inherit
