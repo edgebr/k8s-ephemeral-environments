@@ -147,6 +147,7 @@ permissions:
   packages: write
   pull-requests: write
   security-events: write
+  id-token: write    # Required by the reusable workflow for AWS OIDC authentication
 
 jobs:
   pr-environment:
