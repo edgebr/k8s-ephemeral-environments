@@ -17,7 +17,7 @@ inputs:
     description: "PR number for tagging"
     required: true
   commit-sha:
-    description: "Full commit SHA for tagging"
+    description: "Full commit SHA (retained for metadata/traceability)"
     required: true
   registry:
     description: "Container registry hostname (used when registry-type is ghcr)"
@@ -49,7 +49,7 @@ inputs:
 
 outputs:
   image-tag:
-    description: "Short image tag (commit SHA)"
+    description: "Image tag (pr-N format)"
     value: ${{ steps.meta.outputs.version }}
   image-digest:
     description: "Image digest for immutable reference"
@@ -124,7 +124,7 @@ runs:
           exit 1
         fi
 
-        # Validate commit SHA format
+        # Validate commit SHA format (retained for metadata/traceability; no longer used in image tags)
         if ! [[ "$COMMIT_SHA" =~ ^[a-f0-9]{40}$ ]]; then
           echo "ERROR: commit-sha must be a 40-character hex string"
           echo "Received: '$COMMIT_SHA'"
@@ -232,7 +232,8 @@ runs:
               --region "$ECR_REGION" \
               --image-scanning-configuration scanOnPush=false
 
-            # Expire untagged images after 7 days to avoid unbounded accumulation
+            # Expire untagged images after 7 days to avoid unbounded accumulation.
+            # Note: organization-wide ECR lifecycle policies take precedence when configured.
             aws ecr put-lifecycle-policy \
               --repository-name "$IMAGE_NAME" \
               --region "$ECR_REGION" \
@@ -277,7 +278,6 @@ runs:
       with:
         images: ${{ steps.resolve-registry.outputs.url }}/${{ inputs.image-name }}
         tags: |
-          type=sha,prefix=,format=short
           type=raw,value=pr-${{ inputs.pr-number }}
 
     - name: Build and push

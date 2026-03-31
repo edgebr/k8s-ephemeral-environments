@@ -16,7 +16,7 @@ fullnameOverride: ""
 image:
   # Repository URL (required) - e.g., ghcr.io/org/app
   repository: ""
-  # Image tag (required) - typically commit SHA or version
+  # Image tag (required) - typically pr-N format or version
   tag: ""
   # Digest for immutable image reference (optional, takes precedence over tag)
   digest: ""
