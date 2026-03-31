@@ -1,0 +1,120 @@
+name: "Cleanup ECR Images"
+description: "Deletes PR image tags from ECR when a PR environment is destroyed. Best-effort and idempotent."
+
+inputs:
+  image-name:
+    description: 'ECR repository name (e.g., org/repo/project-id)'
+    required: true
+  pr-number:
+    description: 'PR number whose image tag (pr-N) should be deleted'
+    required: true
+  ecr-region:
+    description: 'AWS region for ECR'
+    required: true
+  ecr-role-to-assume:
+    description: 'IAM role ARN for OIDC authentication with AWS ECR'
+    required: true
+
+outputs:
+  deleted:
+    description: "Whether an image tag was deleted ('true' or 'false')"
+    value: ${{ steps.cleanup.outputs.deleted }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        IMAGE_NAME: ${{ inputs.image-name }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        ECR_REGION: ${{ inputs.ecr-region }}
+        ECR_ROLE: ${{ inputs.ecr-role-to-assume }}
+      run: |
+        errors=()
+
+        if [[ -z "$IMAGE_NAME" ]]; then
+          errors+=("image-name is required")
+        fi
+
+        if [[ -z "$PR_NUMBER" ]] || ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+          errors+=("pr-number must be a positive integer, received: '$PR_NUMBER'")
+        fi
+
+        if [[ -z "$ECR_REGION" ]]; then
+          errors+=("ecr-region is required")
+        fi
+
+        if [[ -z "$ECR_ROLE" ]]; then
+          errors+=("ecr-role-to-assume is required")
+        fi
+
+        if [[ ${#errors[@]} -gt 0 ]]; then
+          echo "::error::Input validation failed:"
+          for err in "${errors[@]}"; do
+            echo "  - $err"
+          done
+          exit 1
+        fi
+
+        echo "Inputs validated: image=$IMAGE_NAME pr=$PR_NUMBER region=$ECR_REGION"
+
+    - name: Install AWS CLI
+      shell: bash
+      run: |
+        if command -v aws &> /dev/null; then
+          echo "AWS CLI already installed: $(aws --version)"
+        else
+          echo "Installing AWS CLI..."
+          ARCH=$(uname -m)
+          curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip" -o /tmp/awscliv2.zip
+          unzip -q /tmp/awscliv2.zip -d /tmp
+          sudo /tmp/aws/install
+          rm -rf /tmp/awscliv2.zip /tmp/aws
+          echo "AWS CLI installed: $(aws --version)"
+        fi
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+      with:
+        role-to-assume: ${{ inputs.ecr-role-to-assume }}
+        aws-region: ${{ inputs.ecr-region }}
+
+    - name: Cleanup ECR images
+      id: cleanup
+      shell: bash
+      env:
+        IMAGE_NAME: ${{ inputs.image-name }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        ECR_REGION: ${{ inputs.ecr-region }}
+      run: |
+        TAG="pr-${PR_NUMBER}"
+
+        # Check if ECR repository exists
+        if ! aws ecr describe-repositories \
+          --repository-names "$IMAGE_NAME" \
+          --region "$ECR_REGION" >/dev/null 2>&1; then
+          echo "ECR repository '$IMAGE_NAME' does not exist, nothing to clean up"
+          echo "deleted=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        # Delete the pr-N tag
+        echo "Deleting tag '$TAG' from ECR repository '$IMAGE_NAME'..."
+        RESULT=$(aws ecr batch-delete-image \
+          --repository-name "$IMAGE_NAME" \
+          --region "$ECR_REGION" \
+          --image-ids "imageTag=${TAG}" 2>&1) || true
+
+        if echo "$RESULT" | grep -q '"imageIds"'; then
+          DELETED_COUNT=$(echo "$RESULT" | grep -c '"imageTag"' || true)
+          echo "Successfully deleted $DELETED_COUNT image(s) with tag '$TAG'"
+          echo "deleted=true" >> "$GITHUB_OUTPUT"
+        elif echo "$RESULT" | grep -q '"failures"'; then
+          # Image not found is expected (idempotent) — not an error
+          echo "No images found with tag '$TAG' (already cleaned up or never existed)"
+          echo "deleted=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "Unexpected response: $RESULT"
+          echo "deleted=false" >> "$GITHUB_OUTPUT"
+        fi

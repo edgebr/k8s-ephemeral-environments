@@ -726,6 +726,44 @@ jobs:
           repository: ${{ inputs.repository }}
 
   # ============================================================================
+  # CLEANUP ECR IMAGES
+  # Runs on: arc-runner-set (self-hosted)
+  # Condition: action is destroy AND registry-type is ecr
+  # Runs in parallel with destroy-namespace (independent operations)
+  # Best-effort: continue-on-error ensures failures don't block the workflow
+  # ============================================================================
+  cleanup-ecr-images:
+    name: Cleanup ECR Images
+    if: >
+      needs.resolve-action.outputs.action == 'destroy' &&
+      inputs.registry-type == 'ecr'
+    needs: [validate-config, resolve-action]
+    runs-on: arc-runner-set
+    timeout-minutes: 5
+    continue-on-error: true
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout k8s-ee for actions
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98 # v4.3.1
+        with:
+          repository: ${{ inputs.k8s-ee-repo }}
+          ref: ${{ needs.validate-config.outputs.k8s-ee-ref }}
+          sparse-checkout: .github/actions
+          sparse-checkout-cone-mode: false
+
+      - name: Cleanup ECR images
+        uses: ./.github/actions/cleanup-ecr-images
+        with:
+          image-name: ${{ inputs.repository }}/${{ needs.validate-config.outputs.project-id }}
+          pr-number: ${{ needs.validate-config.outputs.resolved-pr-number }}
+          ecr-region: ${{ inputs.ecr-region }}
+          ecr-role-to-assume: ${{ inputs.ecr-role-to-assume || vars.ECR_ROLE_TO_ASSUME || '' }}
+
+  # ============================================================================
   # PR COMMENT (DESTROY)
   # Runs on: arc-runner-set (self-hosted)
   # Condition: Always after destroy-namespace, when action was destroy
