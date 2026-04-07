@@ -77,11 +77,11 @@ Destroy Path (pr-action == 'closed'):
 | Job | Runner | Condition | Purpose |
 |-----|--------|-----------|---------|
 | `validate-config` | ubuntu-latest | Always | Parse k8s-ee.yaml, validate config |
-| `create-namespace` | arc-runner-set | PR not closed | Create namespace with quotas and policies |
+| `create-namespace` | arc-runner-set-k8s-ee | PR not closed | Create namespace with quotas and policies |
 | `build-image` | ubuntu-latest | PR not closed | Build ARM64 image, push to GHCR, Trivy scan |
-| `deploy-app` | arc-runner-set | PR not closed | Deploy with Helm, health check |
+| `deploy-app` | arc-runner-set-k8s-ee | PR not closed | Deploy with Helm, health check |
 | `pr-comment-deploy` | ubuntu-latest | After deploy | Post success/failure comment |
-| `destroy-namespace` | arc-runner-set | PR closed | Delete namespace (unless preserved) |
+| `destroy-namespace` | arc-runner-set-k8s-ee | PR closed | Delete namespace (unless preserved) |
 | `pr-comment-destroy` | ubuntu-latest | After destroy | Post destroyed/preserved comment |
 
 ### Client Workflow Template

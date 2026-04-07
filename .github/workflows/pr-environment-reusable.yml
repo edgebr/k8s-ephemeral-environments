@@ -111,7 +111,7 @@ concurrency:
   group: pr-env-${{ inputs.repository }}-${{ inputs.pr-number || inputs.issue-number }}
   cancel-in-progress: false
 
-# All jobs run on arc-runner-set (self-hosted) to avoid GitHub-hosted runner billing.
+# All jobs run on arc-runner-set-k8s-ee (self-hosted) to avoid GitHub-hosted runner billing.
 #
 # Checkout Strategy:
 # - Jobs that need BOTH calling repo and k8s-ee actions (validate-config, build-image):
@@ -122,12 +122,12 @@ concurrency:
 jobs:
   # ============================================================================
   # VALIDATE CONFIG
-  # Runs on: arc-runner-set (self-hosted)
+  # Runs on: arc-runner-set-k8s-ee (self-hosted)
   # Purpose: Parse and validate k8s-ee.yaml, extract config for downstream jobs
   # ============================================================================
   validate-config:
     name: Validate Config
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 3
 
     permissions:
@@ -277,13 +277,13 @@ jobs:
 
   # ============================================================================
   # RESOLVE ACTION
-  # Runs on: arc-runner-set (self-hosted)
+  # Runs on: arc-runner-set-k8s-ee (self-hosted)
   # Purpose: Map (trigger mode, event context) to action
   # ============================================================================
   resolve-action:
     name: Resolve Action
     needs: validate-config
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 2
 
     outputs:
@@ -355,7 +355,7 @@ jobs:
 
   # ============================================================================
   # CHECK NAMESPACE
-  # Runs on: arc-runner-set (in-cluster, has kubectl access)
+  # Runs on: arc-runner-set-k8s-ee (in-cluster, has kubectl access)
   # Condition: action is check-redeploy (on-demand mode, push event)
   # Depends on: validate-config, resolve-action
   # ============================================================================
@@ -363,7 +363,7 @@ jobs:
     name: Check Namespace Exists
     if: needs.resolve-action.outputs.action == 'check-redeploy'
     needs: [validate-config, resolve-action]
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 2
 
     permissions:
@@ -404,7 +404,7 @@ jobs:
 
   # ============================================================================
   # CREATE NAMESPACE
-  # Runs on: arc-runner-set (in-cluster, has kubectl access)
+  # Runs on: arc-runner-set-k8s-ee (in-cluster, has kubectl access)
   # Condition: action is deploy or check-redeploy with existing namespace
   # Depends on: validate-config, resolve-action, check-namespace
   # ============================================================================
@@ -416,7 +416,7 @@ jobs:
       (needs.resolve-action.outputs.action == 'deploy' ||
        (needs.resolve-action.outputs.action == 'check-redeploy' && needs.check-namespace.outputs.exists == 'true'))
     needs: [validate-config, resolve-action, check-namespace]
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 5
 
     permissions:
@@ -463,7 +463,7 @@ jobs:
 
   # ============================================================================
   # BUILD IMAGE
-  # Runs on: arc-runner-set (self-hosted)
+  # Runs on: arc-runner-set-k8s-ee (self-hosted)
   # Condition: action is deploy or check-redeploy with existing namespace
   # Depends on: validate-config, resolve-action, check-namespace
   # ============================================================================
@@ -475,7 +475,7 @@ jobs:
       (needs.resolve-action.outputs.action == 'deploy' ||
        (needs.resolve-action.outputs.action == 'check-redeploy' && needs.check-namespace.outputs.exists == 'true'))
     needs: [validate-config, resolve-action, check-namespace]
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 15
 
     permissions:
@@ -526,7 +526,7 @@ jobs:
 
   # ============================================================================
   # DEPLOY APP
-  # Runs on: arc-runner-set (in-cluster, has kubectl/helm access)
+  # Runs on: arc-runner-set-k8s-ee (in-cluster, has kubectl/helm access)
   # Condition: create-namespace and build-image succeeded
   # Depends on: validate-config, create-namespace, build-image
   # ============================================================================
@@ -538,7 +538,7 @@ jobs:
       needs.create-namespace.result == 'success' &&
       needs.build-image.result == 'success'
     needs: [validate-config, create-namespace, build-image]
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 10
 
     permissions:
@@ -612,7 +612,7 @@ jobs:
 
   # ============================================================================
   # PR COMMENT (DEPLOY)
-  # Runs on: arc-runner-set (self-hosted)
+  # Runs on: arc-runner-set-k8s-ee (self-hosted)
   # Condition: Always after deploy-app (success or failure), when action was deploy
   # Posts deployment status to PR
   # ============================================================================
@@ -624,7 +624,7 @@ jobs:
       (needs.resolve-action.outputs.action == 'deploy' ||
        (needs.resolve-action.outputs.action == 'check-redeploy' && needs.check-namespace.outputs.exists == 'true'))
     needs: [validate-config, resolve-action, check-namespace, build-image, deploy-app]
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 2
 
     permissions:
@@ -684,7 +684,7 @@ jobs:
 
   # ============================================================================
   # DESTROY NAMESPACE
-  # Runs on: arc-runner-set (in-cluster, has kubectl access)
+  # Runs on: arc-runner-set-k8s-ee (in-cluster, has kubectl access)
   # Condition: action is destroy
   # Depends on: validate-config, resolve-action
   # ============================================================================
@@ -692,7 +692,7 @@ jobs:
     name: Destroy Namespace
     if: needs.resolve-action.outputs.action == 'destroy'
     needs: [validate-config, resolve-action]
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 5
 
     permissions:
@@ -727,7 +727,7 @@ jobs:
 
   # ============================================================================
   # CLEANUP ECR IMAGES
-  # Runs on: arc-runner-set (self-hosted)
+  # Runs on: arc-runner-set-k8s-ee (self-hosted)
   # Condition: action is destroy AND registry-type is ecr
   # Runs in parallel with destroy-namespace (independent operations)
   # Best-effort: continue-on-error ensures failures don't block the workflow
@@ -738,7 +738,7 @@ jobs:
       needs.resolve-action.outputs.action == 'destroy' &&
       inputs.registry-type == 'ecr'
     needs: [validate-config, resolve-action]
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 5
     continue-on-error: true
 
@@ -765,7 +765,7 @@ jobs:
 
   # ============================================================================
   # PR COMMENT (DESTROY)
-  # Runs on: arc-runner-set (self-hosted)
+  # Runs on: arc-runner-set-k8s-ee (self-hosted)
   # Condition: Always after destroy-namespace, when action was destroy
   # Posts destroy/preserved status to PR
   # ============================================================================
@@ -773,7 +773,7 @@ jobs:
     name: PR Comment (Destroy)
     if: always() && needs.resolve-action.outputs.action == 'destroy' && needs.validate-config.result == 'success'
     needs: [validate-config, resolve-action, destroy-namespace]
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 2
 
     permissions:

@@ -147,7 +147,7 @@ kubectl create secret generic github-app-secret \
 Deploy the runner scale set using the values file (`k8s/arc/values-runner-set.yaml`):
 
 ```bash
-helm install arc-runner-set \
+helm install arc-runner-set-k8s-ee \
   --namespace arc-runners \
   oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
   --version 0.10.1 \
@@ -157,7 +157,7 @@ helm install arc-runner-set \
 Or with inline values (org-level URL):
 
 ```bash
-helm install arc-runner-set \
+helm install arc-runner-set-k8s-ee \
   --namespace arc-runners \
   oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
   --version 0.10.1 \
@@ -177,7 +177,7 @@ kubectl get pods -n arc-runners
 
 Verify runner registered with GitHub (org-level):
 1. Go to **https://github.com/organizations/koder-cat/settings/actions/runners**
-2. You should see `arc-runner-set` listed under "Self-hosted runners"
+2. You should see `arc-runner-set-k8s-ee` listed under "Self-hosted runners"
 3. Status should show as "Idle" (waiting for jobs)
 
 ## Using the Runners
@@ -187,7 +187,7 @@ In your GitHub Actions workflow, use:
 ```yaml
 jobs:
   my-job:
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     steps:
       - uses: actions/checkout@v4
       # Runner has kubectl access via ServiceAccount
@@ -265,7 +265,7 @@ This indicates JIT config injection failed. Check that you haven't overridden th
 ### Jobs queued but not picked up
 1. Check if the runner group allows public repos (if applicable)
 2. Verify the GitHub App has correct permissions
-3. Check listener logs: `kubectl logs -n arc-systems -l app.kubernetes.io/name=arc-runner-set`
+3. Check listener logs: `kubectl logs -n arc-systems -l app.kubernetes.io/name=arc-runner-set-k8s-ee`
 
 See `docs/runbooks/arc-operations.md` for detailed troubleshooting steps.
 
@@ -283,7 +283,7 @@ For org-level runners, adding a new repo is simple:
    - Go to https://github.com/organizations/koder-cat/settings/installations
    - Click **Configure** on the k8s-ee-arc-runner app
    - Add the new repo to the list
-3. The repo can now use `runs-on: arc-runner-set` in workflows
+3. The repo can now use `runs-on: arc-runner-set-k8s-ee` in workflows
 
 No Kubernetes changes required - the runner automatically accepts jobs from all repos in the org.
 
@@ -299,7 +299,7 @@ To support multiple orgs:
 
 Example:
 ```bash
-helm install arc-runner-set-other-org \
+helm install arc-runner-set-k8s-ee-other-org \
   --namespace arc-runners \
   oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
   --version 0.10.1 \
@@ -311,7 +311,7 @@ helm install arc-runner-set-other-org \
 To remove ARC completely:
 
 ```bash
-helm uninstall arc-runner-set -n arc-runners
+helm uninstall arc-runner-set-k8s-ee -n arc-runners
 helm uninstall arc -n arc-systems
 kubectl delete namespace arc-runners
 kubectl delete namespace arc-systems

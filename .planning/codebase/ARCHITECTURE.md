@@ -59,7 +59,7 @@
 2. pr-environment-reusable.yml orchestrates five parallel/sequential jobs:
    - **validate-config**: Parses k8s-ee.yaml from calling repository, validates schema, extracts configuration
    - **build-image** (parallel): Builds container from Dockerfile, pushes to GHCR with tag `pr-{number}`
-   - **create-namespace** (parallel): Executes in-cluster via arc-runner-set
+   - **create-namespace** (parallel): Executes in-cluster via arc-runner-set-k8s-ee
      - Creates namespace `{projectId}-pr-{prNumber}` from template
      - Applies ResourceQuota and LimitRange (dynamically sized based on enabled databases)
      - Applies 5 NetworkPolicies for isolation (default-deny, allow-same-namespace, allow-ingress-controller, allow-observability, allow-egress)

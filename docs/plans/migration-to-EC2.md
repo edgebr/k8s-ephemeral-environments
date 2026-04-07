@@ -182,7 +182,7 @@ kubectl apply -f ~/k8s/platform/preserve-expiry/
 **Secrets created on cluster:**
 - `github-app-secret-edgebr` in `arc-runners` (App ID: 2999114, Installation ID: 113788735, private key)
 
-**Helm release:** `arc-runner-set-edgebr` (chart: gha-runner-scale-set 0.13.1)
+**Helm release:** `arc-runner-set-k8s-ee-edgebr` (chart: gha-runner-scale-set 0.13.1)
 
 **Verified:** Listener pod running in `arc-systems`, runner scale set registered with GitHub
 

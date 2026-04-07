@@ -31,7 +31,7 @@
 ## Implementation Notes
 
 - Implemented as part of US-004
-- Scale set name: `arc-runner-set`
+- Scale set name: `arc-runner-set-k8s-ee`
 - Min runners: 0 (scale to zero when idle)
 - Max runners: 3
 - kubectl installed via workflow step (ARM64 binary)

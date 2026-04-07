@@ -23,7 +23,7 @@ jobs:
     if: |
       github.event.issue.pull_request &&
       startsWith(github.event.comment.body, '/preserve')
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 5
 
     permissions:

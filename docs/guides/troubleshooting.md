@@ -166,7 +166,7 @@ gh run view <run-id> --log-failed
 kubectl get pods -n arc-runners
 
 # Check listener pod (receives job notifications)
-kubectl logs -n arc-systems -l app.kubernetes.io/name=arc-runner-set --tail=50
+kubectl logs -n arc-systems -l app.kubernetes.io/name=arc-runner-set-k8s-ee --tail=50
 
 # Verify runner group allows public repos (if applicable)
 gh api /orgs/{org}/actions/runner-groups --jq '.runner_groups[] | {name, allows_public_repositories}'

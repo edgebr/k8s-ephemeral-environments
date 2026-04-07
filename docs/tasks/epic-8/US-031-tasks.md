@@ -28,7 +28,7 @@
 ### T-031.3: Create create-namespace Job ✅
 - **Description:** Create job to set up PR namespace
 - **Acceptance Criteria:**
-  - Runs on arc-runner-set (in-cluster)
+  - Runs on arc-runner-set-k8s-ee (in-cluster)
   - Conditional on PR not closed
   - Depends on validate-config
   - Calls create-namespace action
@@ -49,7 +49,7 @@
 ### T-031.5: Create deploy Job ✅
 - **Description:** Create job to deploy application
 - **Acceptance Criteria:**
-  - Runs on arc-runner-set (in-cluster)
+  - Runs on arc-runner-set-k8s-ee (in-cluster)
   - Conditional on PR not closed
   - Depends on all previous jobs
   - Calls deploy-app action
@@ -60,7 +60,7 @@
 ### T-031.6: Create destroy Job ✅
 - **Description:** Create job to destroy namespace on PR close
 - **Acceptance Criteria:**
-  - Runs on arc-runner-set (in-cluster)
+  - Runs on arc-runner-set-k8s-ee (in-cluster)
   - Conditional on PR closed
   - Depends on validate-config only
   - Calls destroy-namespace action

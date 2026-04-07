@@ -456,7 +456,7 @@ For `redeploy` action (synchronize events), check if namespace exists before pro
     name: Check Namespace Exists
     if: needs.parse-command.outputs.action == 'redeploy'
     needs: [parse-command, validate-config]
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 2
 
     permissions:
@@ -513,7 +513,7 @@ The deploy condition is: `(action == 'deploy') || (action == 'redeploy' && names
       (needs.parse-command.outputs.action == 'deploy' ||
        (needs.parse-command.outputs.action == 'redeploy' && needs.check-namespace.outputs.exists == 'true'))
     needs: [parse-command, validate-config, check-namespace]
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 5
 
     permissions:
@@ -619,7 +619,7 @@ The deploy condition is: `(action == 'deploy') || (action == 'redeploy' && names
       needs.create-namespace.result == 'success' &&
       needs.build-image.result == 'success'
     needs: [parse-command, validate-config, create-namespace, build-image]
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 10
 
     permissions:
@@ -694,7 +694,7 @@ The deploy condition is: `(action == 'deploy') || (action == 'redeploy' && names
     name: Destroy Namespace
     if: needs.parse-command.outputs.action == 'destroy' && needs.validate-config.result == 'success'
     needs: [parse-command, validate-config]
-    runs-on: arc-runner-set
+    runs-on: arc-runner-set-k8s-ee
     timeout-minutes: 5
 
     permissions:

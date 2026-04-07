@@ -43,7 +43,7 @@ kubectl logs -n arc-runners -l app.kubernetes.io/component=runner -f
 
 For org-level runners:
 1. Go to **https://github.com/organizations/koder-cat/settings/actions/runners**
-2. Look for `arc-runner-set` in the list
+2. Look for `arc-runner-set-k8s-ee` in the list
 3. Status should show "Idle" or "Active"
 
 ### Force Runner Restart
@@ -64,7 +64,7 @@ kubectl rollout restart deployment -n arc-systems -l app.kubernetes.io/name=gha-
 2. Apply the update:
 
 ```bash
-helm upgrade arc-runner-set \
+helm upgrade arc-runner-set-k8s-ee \
   --namespace arc-runners \
   oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
   --version 0.10.1 \
@@ -75,7 +75,7 @@ helm upgrade arc-runner-set \
 
 ```bash
 # Increase max runners temporarily
-helm upgrade arc-runner-set \
+helm upgrade arc-runner-set-k8s-ee \
   --namespace arc-runners \
   oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
   --version 0.10.1 \
@@ -105,7 +105,7 @@ helm upgrade arc-runner-set \
 ### Workflow Stuck on "Queued"
 
 1. Verify runners are registered in GitHub
-2. Check if `runs-on: arc-runner-set` matches the scale set name
+2. Check if `runs-on: arc-runner-set-k8s-ee` matches the scale set name
 3. Verify runner pods can be scheduled:
    ```bash
    kubectl describe pods -n arc-runners
@@ -121,7 +121,7 @@ This occurs when the listener is running but GitHub isn't sending job notificati
 kubectl get pods -n arc-systems
 
 # Check for errors
-kubectl logs -n arc-systems -l app.kubernetes.io/name=arc-runner-set --tail=50
+kubectl logs -n arc-systems -l app.kubernetes.io/name=arc-runner-set-k8s-ee --tail=50
 ```
 
 Look for:
@@ -156,13 +156,13 @@ If the runner isn't appearing in GitHub, reinstall the helm release:
 
 ```bash
 # Uninstall
-helm uninstall arc-runner-set -n arc-runners
+helm uninstall arc-runner-set-k8s-ee -n arc-runners
 
 # Wait for cleanup
 sleep 10
 
 # Reinstall with fresh registration
-helm install arc-runner-set \
+helm install arc-runner-set-k8s-ee \
   --namespace arc-runners \
   oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
   --version 0.10.1 \
@@ -274,7 +274,7 @@ helm upgrade arc \
   --version NEW_VERSION
 
 # Update runner scale set
-helm upgrade arc-runner-set \
+helm upgrade arc-runner-set-k8s-ee \
   --namespace arc-runners \
   oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
   --version NEW_VERSION \
@@ -315,7 +315,7 @@ If ARC is completely broken:
 
 ```bash
 # Remove everything
-helm uninstall arc-runner-set -n arc-runners
+helm uninstall arc-runner-set-k8s-ee -n arc-runners
 helm uninstall arc -n arc-systems
 kubectl delete namespace arc-runners
 kubectl delete namespace arc-systems

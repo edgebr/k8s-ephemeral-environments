@@ -366,7 +366,7 @@ kubectl apply -f k8s/arc/controller-rbac.yaml
 kubectl apply -f k8s/arc/runner-rbac.yaml
 
 # 4. Install runner scale set
-helm upgrade --install arc-runner-set \
+helm upgrade --install arc-runner-set-k8s-ee \
   oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
   -n arc-runners \
   -f k8s/arc/values-runner-set.yaml

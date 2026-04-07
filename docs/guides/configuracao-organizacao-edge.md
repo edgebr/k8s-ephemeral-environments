@@ -305,7 +305,7 @@ Criar `k8s/arc/values-runner-set-{org}.yaml`:
 ```yaml
 githubConfigUrl: "https://github.com/{org}"
 githubConfigSecret: github-app-secret-{org}
-runnerScaleSetName: "arc-runner-set"
+runnerScaleSetName: "arc-runner-set-k8s-ee"
 minRunners: 0
 maxRunners: 3
 template:
@@ -652,11 +652,11 @@ Vá em **Actions** no repositório e observe os jobs:
 
 | Job | Runner | O que faz |
 |-----|--------|-----------|
-| Validate Config | `ubuntu-latest` | Valida `k8s-ee.yaml` e organização na allowlist |
-| Build Image | `ubuntu-latest` | Constrói imagem x86, publica no GHCR |
-| Create Namespace | `arc-runner-set` | Cria namespace no cluster |
-| Deploy App | `arc-runner-set` | Faz deploy via Helm (cria imagePullSecret automaticamente) |
-| PR Comment | `ubuntu-latest` | Posta URL de preview no PR |
+| Validate Config | `arc-runner-set-k8s-ee` | Valida `k8s-ee.yaml` e organização na allowlist |
+| Build Image | `arc-runner-set-k8s-ee` | Constrói imagem x86, publica no GHCR |
+| Create Namespace | `arc-runner-set-k8s-ee` | Cria namespace no cluster |
+| Deploy App | `arc-runner-set-k8s-ee` | Faz deploy via Helm (cria imagePullSecret automaticamente) |
+| PR Comment | `arc-runner-set-k8s-ee` | Posta URL de preview no PR |
 
 **3. Verifique o comentário no PR**
 

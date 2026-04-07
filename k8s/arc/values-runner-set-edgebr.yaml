@@ -1,6 +1,6 @@
 githubConfigUrl: "https://github.com/edgebr"
 githubConfigSecret: github-app-secret-edgebr
-runnerScaleSetName: "arc-runner-set"
+runnerScaleSetName: "arc-runner-set-k8s-ee"
 minRunners: 0
 maxRunners: 3
 

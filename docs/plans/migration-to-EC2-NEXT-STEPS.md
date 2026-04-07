@@ -27,7 +27,7 @@ Além disso, os workflows do fork precisam ser adaptados para arquitetura `amd64
 
 Arquivo criado: `k8s/arc/values-runner-set-edgebr.yaml`
 Secret criado: `github-app-secret-edgebr` em `arc-runners`
-Helm release: `arc-runner-set-edgebr` (gha-runner-scale-set 0.13.1)
+Helm release: `arc-runner-set-k8s-ee-edgebr` (gha-runner-scale-set 0.13.1)
 Verificado: Listener pod rodando, runner scale set registrado no GitHub
 
 ---
