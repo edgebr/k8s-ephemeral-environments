@@ -424,6 +424,7 @@ runs:
     - name: Upload Trivy scan results as artifact
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       if: always()
+      continue-on-error: true
       with:
         name: trivy-scan-results
         path: trivy-results.sarif
@@ -432,6 +433,7 @@ runs:
     - name: Generate SBOM
       id: sbom
       uses: anchore/sbom-action@f325610c9f50a54015d37c8d16cb3b0e2c8f4de0 # v0.18.0
+      continue-on-error: true
       env:
         # First platform only — Syft scans one manifest at a time
         SYFT_PLATFORM: ${{ steps.scan-platform.outputs.value }}
