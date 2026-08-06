@@ -332,7 +332,7 @@ If your `k8s-ee.yaml` `env:` values are missing from the ConfigMap, verify:
 
 **Symptoms:**
 - Pod stuck in `ImagePullBackOff` or `ErrImagePull`
-- Events show `403 Forbidden` from GHCR or `401 Unauthorized` from ECR
+- Events show `403 Forbidden` from GHCR, or `401 Unauthorized` / `403 Forbidden` from ECR
 
 **Diagnosis:**
 ```bash
@@ -374,7 +374,7 @@ gh api /orgs/{org}/packages/container/{repo}%2F{image} --jq '.visibility'
 | Cause | Solution |
 |-------|----------|
 | Missing credentials | Check `ECR_ROLE_TO_ASSUME` repository variable and IAM role trust policy |
-| Expired token | ECR tokens expire after 12h; re-run the workflow |
+| Expired token | ECR tokens expire after 12h; re-run the workflow. See [Environment breaks on restart](#environment-breaks-on-restart-expired-ecr-token) below |
 | Wrong region | Verify `ecr-region` matches the ECR repository region |
 | Missing IAM permissions | IAM role needs `ecr:GetAuthorizationToken`, `ecr:BatchGetImage`, `ecr:GetDownloadUrlForLayer` |
 
@@ -391,6 +391,39 @@ kubectl get secret ecr-pull-secret -n {namespace} -o yaml
 ```
 
 > **Note:** ECR image tags (`pr-N`) are automatically deleted when the PR environment is destroyed. If you see `ImagePullBackOff` on a restarted pod after the PR was closed and reopened, the image may have been cleaned up — push a new commit to trigger a fresh build.
+
+##### Environment breaks on restart (expired ECR token)
+
+A healthy environment can break hours or days after a successful deploy, with no
+change on your side. The usual trigger is a node reboot (for example an automatic
+kernel upgrade), which restarts every pod at once.
+
+**What happens:** `ecr-pull-secret` is written once, at deploy time, and is never
+refreshed. The ECR token inside it dies 12h later. Nothing breaks immediately —
+the container keeps running from its cached image. But the next container restart
+makes kubelet re-check the registry, that request returns `403 Forbidden`, and the
+pod drops into `ImagePullBackOff` even though **the image is still cached on the
+node**.
+
+**Confirm the image is cached** (if it is, this is purely an auth failure):
+
+```bash
+# Digest the deployment wants
+kubectl get deploy -n {namespace} -o jsonpath='{.items[0].spec.template.spec.containers[0].image}'
+
+# Is that digest already on the node?
+sudo k3s ctr -n k8s.io images ls | grep <digest>
+```
+
+**Resolution:** push a new commit (or re-run the deploy workflow) to mint a fresh
+token and rewrite the secret.
+
+**Prevention:** the chart now selects the pull policy based on the image reference
+(`image.pullPolicy` in `charts/k8s-ee-app/values.yaml`). Deploys that pass an immutable
+digest get `IfNotPresent`, so restarts reuse the cached image and never contact
+the registry — a stale token can no longer take down a running environment. Only
+the initial pull needs valid credentials, and the workflow always creates a fresh
+secret at that point.
 
 ### Init Container Stuck
 

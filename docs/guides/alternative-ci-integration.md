@@ -196,6 +196,12 @@ pipeline {
                         --set postgresql.enabled=true \
                         --wait --timeout 5m
                     # For ECR, use: --set "imagePullSecrets[0].name=ecr-pull-secret"
+                    #
+                    # image.pullPolicy is optional: when omitted the chart picks
+                    # Always for tag-based refs and IfNotPresent for digest-based
+                    # refs (--set image.digest=sha256:...). Prefer digests — the
+                    # cached image is then reused on restart, so an expired
+                    # registry token cannot break a running environment.
                 '''
             }
         }

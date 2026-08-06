@@ -602,7 +602,7 @@ jobs:
 | `preview-domain` | `k8s-ee.edge.net.br` | Domínio base para URLs de preview |
 | `kubectl-version` | `v1.31.0` | Versão do kubectl |
 | `helm-version` | `v3.16.0` | Versão do Helm |
-| `chart-version` | `1.0.0` | Versão do chart k8s-ee-app |
+| `chart-version` | `1.1.0` | Versão do chart k8s-ee-app |
 
 ### 6.3 Dockerfile
 
@@ -760,6 +760,33 @@ Ambientes são automaticamente destruídos quando PRs são fechados/mergeados. E
    kubectl get secret ghcr-pull-secret -n {namespace} -o jsonpath='{.data.\.dockerconfigjson}' | base64 -d
    ```
 3. **Token do workflow tem permissão `packages: read`?** — Verifique o bloco `permissions` no workflow
+
+#### Ambiente quebra após reinício (token ECR expirado)
+
+**Sintoma:** um ambiente que estava saudável passa a `ImagePullBackOff` com
+`403 Forbidden`, horas ou dias após um deploy bem-sucedido e **sem nenhuma
+alteração**. O gatilho comum é o reinício do nó (por exemplo, atualização
+automática de kernel), que reinicia todos os pods de uma vez.
+
+**Causa:** o `ecr-pull-secret` é criado uma única vez, no momento do deploy, e
+nunca é renovado. O token ECR expira em 12h. Nada quebra de imediato — o
+contêiner continua rodando com a imagem em cache. Mas no próximo reinício o
+kubelet reconsulta o registry, recebe `403` e o pod entra em `ImagePullBackOff`
+mesmo com **a imagem ainda em cache no nó**.
+
+**Confirmar que a imagem está em cache** (se estiver, é apenas falha de auth):
+
+```bash
+kubectl get deploy -n {namespace} -o jsonpath='{.items[0].spec.template.spec.containers[0].image}'
+sudo k3s ctr -n k8s.io images ls | grep <digest>
+```
+
+**Solução:** faça um novo commit (ou re-execute o workflow de deploy) para gerar
+um token novo e reescrever o secret.
+
+**Prevenção:** a partir do chart `1.1.0`, deploys por digest usam
+`IfNotPresent` — reinícios reutilizam a imagem em cache e não consultam o
+registry, então um token expirado não derruba mais um ambiente em execução.
 
 ### Runner não aceita jobs
 
