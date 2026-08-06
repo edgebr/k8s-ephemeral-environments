@@ -20,8 +20,12 @@ image:
   tag: ""
   # Digest for immutable image reference (optional, takes precedence over tag)
   digest: ""
-  # Pull policy - Always recommended for PR environments
-  pullPolicy: Always
+  # Pull policy. Leave empty to select automatically based on the image reference:
+  #   digest set -> IfNotPresent (immutable ref, so the cached image is always correct;
+  #                 avoids re-authenticating to the registry on every container restart)
+  #   tag only   -> Always       (mutable ref, so the registry must be re-checked)
+  # Set explicitly (Always/IfNotPresent/Never) to override the automatic choice.
+  pullPolicy: ""
 
 # Image pull secrets for private registry authentication.
 # Set by the workflow: ghcr-pull-secret (GHCR) or ecr-pull-secret (ECR).
