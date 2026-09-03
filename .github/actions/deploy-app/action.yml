@@ -271,7 +271,7 @@ runs:
         # Check for and clean up any failed release
         RELEASE_STATUS=$(helm status "$RELEASE_NAME" -n "$NAMESPACE" 2>/dev/null | grep "STATUS:" | awk '{print $2}' || echo "not-found")
 
-        if [[ "$RELEASE_STATUS" =~ ^(failed|pending-install|pending-upgrade|pending-rollback)$ ]]; then
+        if [[ "$RELEASE_STATUS" =~ ^(failed|pending-install|pending-upgrade|pending-rollback|uninstalling|uninstalled|unknown)$ ]]; then
           echo "Found release in $RELEASE_STATUS state, cleaning up..."
           helm uninstall "$RELEASE_NAME" -n "$NAMESPACE" --wait --timeout 2m || true
         else
