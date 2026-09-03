@@ -104,11 +104,15 @@ readinessProbe:
   failureThreshold: 3
 
 # Startup probe - prevents liveness from killing slow-starting pods
-# Note: Java/Spring Boot apps on ARM64 can take 60-90s to start
+# Budget must cover a cold first boot. Apps that run migrations and seed data
+# before listening take minutes, and the probe reports that as "connection
+# refused" while it burns its failure budget. Kept below the helm --timeout in
+# .github/actions/deploy-app so a truly hung container is restarted with a
+# diagnostic before helm gives up: probe 15m < helm 20m < job 25m.
 startupProbe:
   initialDelaySeconds: 5
-  failureThreshold: 60
-  periodSeconds: 2
+  failureThreshold: 180
+  periodSeconds: 5
 
 # -----------------------------------------------------------------------------
 # Graceful Shutdown

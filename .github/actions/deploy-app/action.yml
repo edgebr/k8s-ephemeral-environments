@@ -50,7 +50,7 @@ inputs:
   timeout:
     description: 'Helm deployment timeout'
     required: false
-    default: '10m'
+    default: '20m'
   health-path:
     description: 'Health check endpoint path'
     required: false
